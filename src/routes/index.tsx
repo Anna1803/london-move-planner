@@ -1,26 +1,41 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Header } from "@/components/Header";
+import { Hero } from "@/components/Hero";
+import { Services } from "@/components/Services";
+import { CategoryPicker } from "@/components/CategoryPicker";
+import { Security } from "@/components/Security";
+import { Footer } from "@/components/Footer";
 
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "The Boys — London Removals, Cleaning & Handyman" },
+      {
+        name: "description",
+        content:
+          "London's superhero moving crew. Removals, end-of-tenancy cleaning and handyman work in one crew. Build a live quote in seconds.",
+      },
+      { property: "og:title", content: "The Boys — London Removals" },
+      {
+        property: "og:description",
+        content: "Your moving supes are here. Removals, cleaning, handyman — one crew.",
+      },
+    ],
+  }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. For sites with multiple pages (About, Services, Contact, etc.),
-// create separate route files (about.tsx, services.tsx, contact.tsx) — don't put all pages in this file.
-function PlaceholderIndex() {
+function Index() {
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <div className="min-h-screen bg-background">
+      <Header />
+      <main>
+        <Hero />
+        <Services />
+        <CategoryPicker />
+        <Security />
+      </main>
+      <Footer />
     </div>
   );
-}
-
-function Index() {
-  return <PlaceholderIndex />;
 }
