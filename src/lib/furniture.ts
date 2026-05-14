@@ -1,24 +1,16 @@
+export type Difficulty = 1 | 2 | 3; // 1 easy, 2 medium, 3 hard/heavy/awkward
+
 export type FurnitureItem = {
   id: string;
   label: string;
-  volume: number; // cubic meters
-  price: number; // £ for handling/move
-  // Isometric placement on the room canvas (relative to room cell)
-  x: number; // 0..100
-  y: number; // 0..100
-  w: number; // 0..100
-  d: number; // 0..100 (depth on the iso plane)
-  h: number; // visual height factor 0..1
-  shape?: "box" | "sofa" | "bed" | "round" | "tall";
+  difficulty: Difficulty;
+  required?: boolean; // included by default for that room
 };
 
 export type RoomBlueprint = {
   id: string;
   name: string;
-  // Grid placement on the floorplan (row/col span)
-  gridArea: string; // CSS grid-area
-  accent?: string;
-  items: FurnitureItem[];
+  catalog: FurnitureItem[];
 };
 
 export type PropertyBlueprint = {
@@ -29,90 +21,152 @@ export type PropertyBlueprint = {
   minSqm: number;
   maxSqm: number;
   rooms: RoomBlueprint[];
-  // CSS grid template (rows / cols) for the floorplan
-  gridCols: string;
-  gridRows: string;
 };
 
-// Helper to build an item quickly
-const item = (
+const f = (
   id: string,
   label: string,
-  volume: number,
-  price: number,
-  x: number,
-  y: number,
-  w: number,
-  d: number,
-  h: number,
-  shape: FurnitureItem["shape"] = "box",
-): FurnitureItem => ({ id, label, volume, price, x, y, w, d, h, shape });
+  difficulty: Difficulty,
+  required = false,
+): FurnitureItem => ({ id, label, difficulty, required });
 
+// ---- Reusable room catalogs ----
 const livingRoom: RoomBlueprint = {
   id: "living",
   name: "Living Room",
-  gridArea: "living",
-  items: [
-    item("sofa-3", "3-Seat Sofa", 1.8, 45, 10, 60, 50, 25, 0.45, "sofa"),
-    item("armchair", "Armchair", 0.7, 20, 70, 60, 22, 22, 0.5, "sofa"),
-    item("coffee-table", "Coffee Table", 0.3, 12, 25, 35, 30, 18, 0.18),
-    item("tv-unit", "TV Unit", 0.6, 22, 35, 8, 35, 14, 0.3),
-    item("bookshelf", "Bookshelf", 0.9, 30, 78, 10, 18, 12, 0.85, "tall"),
+  catalog: [
+    f("sofa-3", "3-Seat Sofa", 3, true),
+    f("sofa-2", "2-Seat Sofa", 2),
+    f("armchair", "Armchair", 2),
+    f("coffee-table", "Coffee Table", 1, true),
+    f("tv-unit", "TV Unit / Stand", 2),
+    f("tv", "TV (mounted or on stand)", 2),
+    f("bookshelf", "Bookshelf", 3),
+    f("rug-large", "Large Rug", 1),
+    f("side-table", "Side Table", 1),
+    f("floor-lamp", "Floor Lamp", 1),
+    f("piano-upright", "Upright Piano", 3),
+    f("display-cabinet", "Display Cabinet", 3),
   ],
 };
 
 const bedroom: RoomBlueprint = {
   id: "bedroom",
   name: "Bedroom",
-  gridArea: "bedroom",
-  items: [
-    item("bed-double", "Double Bed", 2.0, 55, 12, 30, 50, 50, 0.35, "bed"),
-    item("wardrobe", "Wardrobe", 1.6, 50, 70, 12, 22, 18, 0.85, "tall"),
-    item("nightstand-1", "Nightstand", 0.15, 8, 10, 18, 12, 10, 0.3),
-    item("dresser", "Dresser", 0.7, 25, 65, 14, 28, 14, 0.45),
+  catalog: [
+    f("bed-double", "Double Bed (frame + mattress)", 3, true),
+    f("bed-single", "Single Bed", 2),
+    f("bed-king", "King Size Bed", 3),
+    f("chest-drawers", "Chest of Drawers", 2, true),
+    f("wardrobe", "Wardrobe", 3),
+    f("nightstand", "Nightstand / Bedside Table", 1),
+    f("dressing-table", "Dressing Table", 2),
+    f("mirror-large", "Large Mirror", 2),
+    f("ottoman", "Ottoman / Storage Bench", 1),
+    f("tv-bedroom", "Bedroom TV", 1),
   ],
 };
 
 const kitchen: RoomBlueprint = {
   id: "kitchen",
   name: "Kitchen",
-  gridArea: "kitchen",
-  items: [
-    item("fridge", "Fridge / Freezer", 0.9, 35, 12, 18, 18, 16, 0.95, "tall"),
-    item("oven", "Oven", 0.5, 22, 35, 22, 18, 16, 0.75, "tall"),
-    item("dining-table", "Dining Table", 0.6, 22, 55, 50, 32, 26, 0.22),
-    item("dishwasher", "Dishwasher", 0.4, 18, 12, 50, 16, 16, 0.7, "tall"),
+  catalog: [
+    f("fridge", "Fridge / Freezer", 3, true),
+    f("oven-free", "Free-standing Oven", 3),
+    f("microwave", "Microwave", 1),
+    f("dishwasher", "Dishwasher", 2),
+    f("washer", "Washing Machine", 3),
+    f("dryer", "Tumble Dryer", 2),
+    f("dining-table", "Dining Table", 2, true),
+    f("dining-chairs", "Dining Chairs (set)", 1),
+    f("kitchen-island", "Kitchen Island / Trolley", 2),
+    f("boxes-kitchen", "Boxes of Kitchenware", 1, true),
   ],
 };
 
 const bathroom: RoomBlueprint = {
   id: "bathroom",
   name: "Bathroom",
-  gridArea: "bathroom",
-  items: [
-    item("washer", "Washing Machine", 0.4, 20, 18, 25, 22, 22, 0.7, "tall"),
-    item("dryer", "Tumble Dryer", 0.4, 20, 18, 65, 22, 22, 0.7, "tall"),
+  catalog: [
+    f("bathtub", "Bathtub (free-standing)", 3, true),
+    f("shower-cabin", "Shower Cabin", 3),
+    f("bath-cabinet", "Bathroom Cabinet", 1),
+    f("laundry-basket", "Laundry Basket", 1),
+    f("mirror-bath", "Bathroom Mirror", 1),
+    f("boxes-toiletries", "Boxes of Toiletries", 1, true),
   ],
 };
 
 const hallway: RoomBlueprint = {
   id: "hallway",
-  name: "Hallway",
-  gridArea: "hallway",
-  items: [
-    item("boxes-sm", "Storage Boxes (×5)", 0.5, 15, 30, 35, 35, 25, 0.3),
-    item("shoe-rack", "Shoe Rack", 0.2, 10, 70, 35, 22, 18, 0.3),
+  name: "Hallway / Storage",
+  catalog: [
+    f("boxes-misc", "Storage Boxes", 1, true),
+    f("shoe-rack", "Shoe Rack", 1),
+    f("coat-rack", "Coat Rack", 1),
+    f("vacuum", "Vacuum Cleaner", 1),
+    f("bicycle", "Bicycle", 2),
+    f("suitcases", "Suitcases", 1),
   ],
 };
 
-const office: RoomBlueprint = {
-  id: "office",
+const homeOffice: RoomBlueprint = {
+  id: "home-office",
   name: "Home Office",
-  gridArea: "office",
-  items: [
-    item("desk", "Desk", 0.5, 20, 25, 25, 45, 22, 0.3),
-    item("office-chair", "Office Chair", 0.3, 12, 55, 35, 18, 18, 0.4, "round"),
-    item("filing", "Filing Cabinet", 0.4, 18, 75, 60, 16, 14, 0.5),
+  catalog: [
+    f("desk", "Desk", 2, true),
+    f("office-chair", "Office Chair", 1, true),
+    f("filing", "Filing Cabinet", 2),
+    f("monitor", "Monitor / Computer", 1),
+    f("printer", "Printer", 1),
+    f("bookshelf-o", "Bookshelf", 2),
+  ],
+};
+
+// ---- Office property rooms ----
+const meetingRoom: RoomBlueprint = {
+  id: "meeting",
+  name: "Meeting Room",
+  catalog: [
+    f("meeting-table", "Conference Table", 3, true),
+    f("meeting-chairs", "Conference Chairs (set)", 2, true),
+    f("display-screen", "Wall Display Screen", 2),
+    f("whiteboard", "Whiteboard", 1),
+  ],
+};
+
+const workspace: RoomBlueprint = {
+  id: "workspace",
+  name: "Open Workspace",
+  catalog: [
+    f("desks", "Desks (per 4)", 2, true),
+    f("office-chairs", "Office Chairs (per 8)", 2, true),
+    f("storage-cabinet", "Storage Cabinet", 2),
+    f("monitors", "Monitors / Computers", 1, true),
+    f("partitions", "Desk Partitions", 2),
+    f("safes", "Safe", 3),
+  ],
+};
+
+const reception: RoomBlueprint = {
+  id: "reception",
+  name: "Reception",
+  catalog: [
+    f("reception-desk", "Reception Desk", 3, true),
+    f("waiting-sofa", "Waiting Sofa", 2),
+    f("coffee-tab", "Coffee Table", 1),
+    f("plants", "Office Plants", 1),
+  ],
+};
+
+const kitchenette: RoomBlueprint = {
+  id: "kitchenette",
+  name: "Kitchenette",
+  catalog: [
+    f("office-fridge", "Office Fridge", 2, true),
+    f("micro-o", "Microwave", 1),
+    f("coffee-machine", "Coffee Machine", 1),
+    f("kitchenette-table", "Break Table & Chairs", 2),
   ],
 };
 
@@ -123,16 +177,7 @@ export const HOUSE: PropertyBlueprint = {
   defaultSqm: 90,
   minSqm: 40,
   maxSqm: 250,
-  gridCols: "1.2fr 1fr 0.8fr",
-  gridRows: "1.2fr 1fr 0.6fr",
-  rooms: [
-    { ...livingRoom, gridArea: "1 / 1 / 2 / 3" },
-    { ...kitchen, gridArea: "1 / 3 / 2 / 4" },
-    { ...bedroom, gridArea: "2 / 1 / 3 / 2" },
-    { ...bathroom, gridArea: "2 / 2 / 3 / 3" },
-    { ...office, gridArea: "2 / 3 / 3 / 4" },
-    { ...hallway, gridArea: "3 / 1 / 4 / 4" },
-  ],
+  rooms: [livingRoom, kitchen, bedroom, bathroom, homeOffice, hallway],
 };
 
 export const APARTMENT: PropertyBlueprint = {
@@ -142,60 +187,7 @@ export const APARTMENT: PropertyBlueprint = {
   defaultSqm: 55,
   minSqm: 20,
   maxSqm: 150,
-  gridCols: "1.3fr 1fr",
-  gridRows: "1fr 1fr 0.5fr",
-  rooms: [
-    { ...livingRoom, gridArea: "1 / 1 / 2 / 2" },
-    { ...kitchen, gridArea: "1 / 2 / 2 / 3" },
-    { ...bedroom, gridArea: "2 / 1 / 3 / 2" },
-    { ...bathroom, gridArea: "2 / 2 / 3 / 3" },
-    { ...hallway, gridArea: "3 / 1 / 4 / 3" },
-  ],
-};
-
-const meetingRoom: RoomBlueprint = {
-  id: "meeting",
-  name: "Meeting Room",
-  gridArea: "meeting",
-  items: [
-    item("meeting-table", "Conference Table", 1.2, 50, 20, 25, 55, 40, 0.22),
-    item("chair-1", "Chairs (×6)", 1.0, 38, 18, 12, 12, 12, 0.4, "round"),
-    item("chair-2", "Chairs (×6)", 0, 0, 70, 12, 12, 12, 0.4, "round"),
-    item("screen", "Display Screen", 0.3, 20, 45, 4, 22, 6, 0.6, "tall"),
-  ],
-};
-
-const workspace: RoomBlueprint = {
-  id: "workspace",
-  name: "Open Workspace",
-  gridArea: "workspace",
-  items: [
-    item("desk-1", "Desks (×4)", 1.2, 60, 15, 25, 30, 20, 0.3),
-    item("desk-2", "Desks (×4)", 0, 0, 60, 25, 30, 20, 0.3),
-    item("chair-w-1", "Office Chairs (×8)", 1.6, 64, 18, 12, 12, 12, 0.4, "round"),
-    item("chair-w-2", "Office Chairs (×8)", 0, 0, 70, 12, 12, 12, 0.4, "round"),
-    item("cabinet", "Storage Cabinets", 0.9, 35, 75, 20, 20, 16, 0.75, "tall"),
-  ],
-};
-
-const reception: RoomBlueprint = {
-  id: "reception",
-  name: "Reception",
-  gridArea: "reception",
-  items: [
-    item("desk-r", "Reception Desk", 0.7, 28, 30, 35, 40, 18, 0.35),
-    item("sofa-r", "Waiting Sofa", 1.2, 35, 25, 70, 40, 20, 0.4, "sofa"),
-  ],
-};
-
-const kitchenette: RoomBlueprint = {
-  id: "kitchenette",
-  name: "Kitchenette",
-  gridArea: "kitchenette",
-  items: [
-    item("fridge-o", "Office Fridge", 0.6, 25, 15, 20, 22, 20, 0.85, "tall"),
-    item("micro", "Microwave", 0.1, 8, 50, 18, 18, 14, 0.3),
-  ],
+  rooms: [livingRoom, kitchen, bedroom, bathroom, hallway],
 };
 
 export const OFFICE: PropertyBlueprint = {
@@ -205,14 +197,7 @@ export const OFFICE: PropertyBlueprint = {
   defaultSqm: 120,
   minSqm: 30,
   maxSqm: 600,
-  gridCols: "1fr 1.4fr",
-  gridRows: "1fr 1fr 0.6fr",
-  rooms: [
-    { ...meetingRoom, gridArea: "1 / 1 / 2 / 2" },
-    { ...workspace, gridArea: "1 / 2 / 3 / 3" },
-    { ...reception, gridArea: "2 / 1 / 3 / 2" },
-    { ...kitchenette, gridArea: "3 / 1 / 4 / 3" },
-  ],
+  rooms: [reception, workspace, meetingRoom, kitchenette],
 };
 
 export const BLUEPRINTS: Record<string, PropertyBlueprint> = {
@@ -220,3 +205,22 @@ export const BLUEPRINTS: Record<string, PropertyBlueprint> = {
   apartment: APARTMENT,
   office: OFFICE,
 };
+
+// ---- Pricing model: time + difficulty, NOT per-item ----
+// Crew of 2 movers; price is hourly. Hours estimated from sqm + total difficulty score.
+export const HOURLY_RATE = 65; // £ per crew-hour
+export const MIN_HOURS = 2;
+
+export function estimateHours(sqm: number, totalDifficulty: number): number {
+  // Base time from property size, plus extra time per difficulty point.
+  const sizeHours = sqm / 28;       // ~28 m² per crew-hour to clear
+  const handlingHours = totalDifficulty * 0.18; // ~11 min per difficulty point
+  return Math.max(MIN_HOURS, Math.round((sizeHours + handlingHours) * 2) / 2); // round to 0.5h
+}
+
+export function difficultyLabel(score: number): string {
+  if (score <= 8) return "Light";
+  if (score <= 18) return "Standard";
+  if (score <= 30) return "Heavy";
+  return "Complex";
+}

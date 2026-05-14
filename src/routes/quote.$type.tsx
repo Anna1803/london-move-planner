@@ -1,8 +1,13 @@
 import { createFileRoute, Link, notFound, useParams } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { ArrowLeft, ShieldCheck, Trash2 } from "lucide-react";
-import { BLUEPRINTS } from "@/lib/furniture";
-import { FloorPlan } from "@/components/FloorPlan";
+import { ArrowLeft, Check, Plus, ShieldCheck, Trash2 } from "lucide-react";
+import {
+  BLUEPRINTS,
+  HOURLY_RATE,
+  difficultyLabel,
+  estimateHours,
+  type FurnitureItem,
+} from "@/lib/furniture";
 
 export const Route = createFileRoute("/quote/$type")({
   beforeLoad: ({ params }) => {
@@ -12,12 +17,10 @@ export const Route = createFileRoute("/quote/$type")({
   },
   head: ({ params }) => ({
     meta: [
-      {
-        title: `Build your ${params.type} quote — The Boys`,
-      },
+      { title: `Build your ${params.type} quote — The Boys` },
       {
         name: "description",
-        content: `Tap furniture on a top-down floor plan to build a live ${params.type} moving quote with The Boys.`,
+        content: `Pick the rooms and items that need moving. Pricing by hours worked, not per item.`,
       },
     ],
   }),
@@ -45,46 +48,57 @@ export const Route = createFileRoute("/quote/$type")({
   ),
 });
 
-const BASE_FEE = 95;
+const CALLOUT_FEE = 75; // fixed van + call-out
 
 function QuotePage() {
   const { type } = useParams({ from: "/quote/$type" });
   const blueprint = BLUEPRINTS[type];
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  // Pre-select the items each room marks as required
+  const [selected, setSelected] = useState<Set<string>>(() => {
+    const init = new Set<string>();
+    blueprint.rooms.forEach((r) =>
+      r.catalog.forEach((it) => {
+        if (it.required) init.add(`${r.id}:${it.id}`);
+      }),
+    );
+    return init;
+  });
+
   const [sqm, setSqm] = useState<number>(blueprint.defaultSqm);
   const [extras, setExtras] = useState<{ cleaning: boolean; handyman: boolean }>({
     cleaning: false,
     handyman: false,
   });
 
-  const toggle = (id: string) =>
+  const toggle = (key: string) =>
     setSelected((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
 
-  const { volume, itemPrice, items } = useMemo(() => {
-    let vol = 0;
-    let price = 0;
-    const list: { id: string; label: string; price: number }[] = [];
+  const { totalDifficulty, selectedCount } = useMemo(() => {
+    let diff = 0;
+    let count = 0;
     for (const room of blueprint.rooms) {
-      for (const it of room.items) {
-        if (selected.has(it.id)) {
-          vol += it.volume;
-          price += it.price;
-          list.push({ id: it.id, label: it.label, price: it.price });
+      for (const it of room.catalog) {
+        const key = `${room.id}:${it.id}`;
+        if (selected.has(key)) {
+          diff += it.difficulty;
+          count += 1;
         }
       }
     }
-    return { volume: vol, itemPrice: price, items: list };
+    return { totalDifficulty: diff, selectedCount: count };
   }, [selected, blueprint]);
 
-  const sqmFee = Math.round(sqm * 1.4);
+  const hours = estimateHours(sqm, totalDifficulty);
+  const labourFee = Math.round(hours * HOURLY_RATE);
   const cleaningFee = extras.cleaning ? Math.round(sqm * 3.2) + 80 : 0;
   const handymanFee = extras.handyman ? 220 : 0;
-  const total = BASE_FEE + sqmFee + itemPrice + cleaningFee + handymanFee;
+  const total = CALLOUT_FEE + labourFee + cleaningFee + handymanFee;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -118,39 +132,33 @@ function QuotePage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-10 grid lg:grid-cols-12 gap-6">
-        {/* Floor plan */}
-        <section className="lg:col-span-8">
-          <div className="mb-4 flex items-end justify-between gap-4">
+        {/* Rooms / catalog */}
+        <section className="lg:col-span-8 space-y-6">
+          <div className="flex items-end justify-between gap-4">
             <div>
               <div className="text-[10px] font-mono uppercase tracking-[0.25em] text-primary mb-1">
-                Step 02 · Tap items to include
+                Step 02 · Tick what's in each room
               </div>
               <h1 className="font-display text-2xl md:text-3xl uppercase leading-none">
-                The floor plan
+                Inventory
               </h1>
+              <p className="mt-2 text-xs text-muted-foreground max-w-md">
+                Some essentials are already ticked for you. Add anything else
+                you've got — pricing is by crew hours, not per item.
+              </p>
             </div>
             <div className="text-right">
               <div className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground">
-                Estimated volume
+                Workload
               </div>
-              <div className="font-display text-xl">{volume.toFixed(1)} m³</div>
+              <div className="font-display text-xl">
+                {difficultyLabel(totalDifficulty)}
+              </div>
             </div>
           </div>
 
-          <div className="relative aspect-[4/3] md:aspect-[3/2] w-full bg-card/30 border border-border rounded-md p-2">
-            <FloorPlan
-              blueprint={blueprint}
-              selected={selected}
-              onToggle={toggle}
-            />
-          </div>
-
-          <p className="mt-3 text-[11px] text-muted-foreground font-mono uppercase tracking-wider">
-            Tap a piece of furniture to add it · tap again to remove
-          </p>
-
-          {/* Size slider */}
-          <div className="mt-6 bg-card border border-border p-5">
+          {/* Property size */}
+          <div className="bg-card border border-border p-5">
             <div className="flex items-end justify-between mb-3">
               <div>
                 <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
@@ -174,6 +182,18 @@ function QuotePage() {
               aria-label="Property size in square meters"
             />
           </div>
+
+          {/* Rooms */}
+          {blueprint.rooms.map((room) => (
+            <RoomCard
+              key={room.id}
+              roomId={room.id}
+              name={room.name}
+              catalog={room.catalog}
+              selected={selected}
+              onToggle={toggle}
+            />
+          ))}
         </section>
 
         {/* Sidebar: quote */}
@@ -186,7 +206,7 @@ function QuotePage() {
                 </div>
                 <button
                   onClick={() => setSelected(new Set())}
-                  disabled={selected.size === 0}
+                  disabled={selectedCount === 0}
                   className="inline-flex items-center gap-1 text-[10px] font-mono uppercase tracking-widest text-muted-foreground hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                 >
                   <Trash2 className="size-3" />
@@ -195,11 +215,14 @@ function QuotePage() {
               </div>
 
               <div className="space-y-2 mb-4 text-sm">
-                <Row label={`Base fee · ${blueprint.title}`} value={`£${BASE_FEE}`} />
-                <Row label={`Size · ${sqm} m²`} value={`£${sqmFee}`} />
+                <Row label="Call-out & van" value={`£${CALLOUT_FEE}`} />
                 <Row
-                  label={`Inventory · ${selected.size} item${selected.size === 1 ? "" : "s"}`}
-                  value={`£${itemPrice}`}
+                  label={`Crew · 2 movers · ${hours}h`}
+                  value={`£${labourFee}`}
+                />
+                <Row
+                  label={`Workload · ${difficultyLabel(totalDifficulty)}`}
+                  value={`${selectedCount} item${selectedCount === 1 ? "" : "s"}`}
                 />
                 {extras.cleaning && (
                   <Row label="End-of-tenancy clean" value={`£${cleaningFee}`} />
@@ -217,6 +240,9 @@ function QuotePage() {
                   £{total.toLocaleString()}
                 </span>
               </div>
+              <p className="mt-1 text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+                £{HOURLY_RATE}/hr · 2-mover crew · min {hours}h booked
+              </p>
 
               {/* Extras */}
               <div className="mt-5 space-y-2">
@@ -237,9 +263,9 @@ function QuotePage() {
               </div>
 
               <button
-                disabled={selected.size === 0}
+                disabled={selectedCount === 0}
                 className="mt-6 w-full h-12 bg-primary text-primary-foreground font-bold uppercase tracking-widest text-xs hover:bg-blood transition-colors disabled:opacity-40 disabled:cursor-not-allowed skew-tag"
-                style={selected.size > 0 ? { boxShadow: "var(--shadow-hero)" } : undefined}
+                style={selectedCount > 0 ? { boxShadow: "var(--shadow-hero)" } : undefined}
               >
                 <span>Send to The Boys</span>
               </button>
@@ -252,31 +278,92 @@ function QuotePage() {
                 </span>
               </p>
             </div>
-
-            {items.length > 0 && (
-              <div className="bg-card border border-border p-5">
-                <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-3">
-                  Items selected
-                </div>
-                <ul className="space-y-1.5 text-xs max-h-60 overflow-y-auto">
-                  {items.map((it) => (
-                    <li
-                      key={it.id}
-                      className="flex items-center justify-between gap-3"
-                    >
-                      <span className="truncate">{it.label}</span>
-                      <span className="font-mono text-muted-foreground">
-                        £{it.price}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
           </div>
         </aside>
       </main>
     </div>
+  );
+}
+
+function RoomCard({
+  roomId,
+  name,
+  catalog,
+  selected,
+  onToggle,
+}: {
+  roomId: string;
+  name: string;
+  catalog: FurnitureItem[];
+  selected: Set<string>;
+  onToggle: (key: string) => void;
+}) {
+  const count = catalog.filter((it) => selected.has(`${roomId}:${it.id}`)).length;
+  return (
+    <div className="bg-card border border-border p-5">
+      <div className="flex items-end justify-between mb-4 pb-3 border-b border-border">
+        <div>
+          <div className="text-[10px] font-mono uppercase tracking-[0.25em] text-muted-foreground">
+            Room
+          </div>
+          <div className="font-display text-xl uppercase leading-none">
+            {name}
+          </div>
+        </div>
+        <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+          {count} selected
+        </div>
+      </div>
+
+      <div className="grid sm:grid-cols-2 gap-2">
+        {catalog.map((it) => {
+          const key = `${roomId}:${it.id}`;
+          const on = selected.has(key);
+          return (
+            <button
+              key={it.id}
+              type="button"
+              onClick={() => onToggle(key)}
+              aria-pressed={on}
+              className={`group flex items-center justify-between gap-3 px-3 py-2.5 border text-left text-xs transition-colors ${
+                on
+                  ? "border-primary bg-primary/10 text-foreground"
+                  : "border-border bg-background/50 text-muted-foreground hover:text-foreground hover:border-foreground/40"
+              }`}
+            >
+              <span className="flex items-center gap-2 min-w-0">
+                <span
+                  className={`shrink-0 inline-flex size-4 items-center justify-center border ${
+                    on
+                      ? "bg-primary border-primary text-primary-foreground"
+                      : "border-border bg-background"
+                  }`}
+                >
+                  {on ? <Check className="size-3" /> : <Plus className="size-3 opacity-60" />}
+                </span>
+                <span className="truncate font-medium">{it.label}</span>
+              </span>
+              <DifficultyDots level={it.difficulty} />
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function DifficultyDots({ level }: { level: 1 | 2 | 3 }) {
+  return (
+    <span className="flex items-center gap-0.5 shrink-0" title={`Difficulty: ${level}/3`}>
+      {[1, 2, 3].map((i) => (
+        <span
+          key={i}
+          className={`size-1.5 rounded-full ${
+            i <= level ? "bg-primary" : "bg-border"
+          }`}
+        />
+      ))}
+    </span>
   );
 }
 
