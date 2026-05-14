@@ -148,7 +148,9 @@ function Scene(boxes: Box[], labels: { x: number; y: number; t: string }[] = [])
   );
 }
 
-const SCENES: Record<string, JSX.Element> = {
+import type { ReactElement } from "react";
+
+const SCENES: Record<string, ReactElement> = {
   // Living room: 3-seat sofa + coffee table + armchair
   living: Scene([
     { x: -7, y: -2, w: 10, d: 4, h: 3.5, fill: DARK }, // sofa base
