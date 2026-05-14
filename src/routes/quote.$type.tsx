@@ -1,13 +1,8 @@
 import { createFileRoute, Link, notFound, useParams } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { ArrowLeft, Check, Plus, ShieldCheck, Trash2 } from "lucide-react";
-import {
-  BLUEPRINTS,
-  HOURLY_RATE,
-  difficultyLabel,
-  estimateHours,
-  type FurnitureItem,
-} from "@/lib/furniture";
+import { BLUEPRINTS, type FurnitureItem } from "@/lib/furniture";
+import { RoomScene } from "@/components/RoomScene";
 
 export const Route = createFileRoute("/quote/$type")({
   beforeLoad: ({ params }) => {
@@ -20,7 +15,7 @@ export const Route = createFileRoute("/quote/$type")({
       { title: `Build your ${params.type} quote — The Boys` },
       {
         name: "description",
-        content: `Pick the rooms and items that need moving. Pricing by hours worked, not per item.`,
+        content: `Walk through every room and tell us what's inside. We'll come back with a tailored quote.`,
       },
     ],
   }),
@@ -47,8 +42,6 @@ export const Route = createFileRoute("/quote/$type")({
     </div>
   ),
 });
-
-const CALLOUT_FEE = 75; // fixed van + call-out
 
 function QuotePage() {
   const { type } = useParams({ from: "/quote/$type" });
@@ -79,26 +72,15 @@ function QuotePage() {
       return next;
     });
 
-  const { totalDifficulty, selectedCount } = useMemo(() => {
-    let diff = 0;
+  const selectedCount = useMemo(() => {
     let count = 0;
     for (const room of blueprint.rooms) {
       for (const it of room.catalog) {
-        const key = `${room.id}:${it.id}`;
-        if (selected.has(key)) {
-          diff += it.difficulty;
-          count += 1;
-        }
+        if (selected.has(`${room.id}:${it.id}`)) count += 1;
       }
     }
-    return { totalDifficulty: diff, selectedCount: count };
+    return count;
   }, [selected, blueprint]);
-
-  const hours = estimateHours(sqm, totalDifficulty);
-  const labourFee = Math.round(hours * HOURLY_RATE);
-  const cleaningFee = extras.cleaning ? Math.round(sqm * 3.2) + 80 : 0;
-  const handymanFee = extras.handyman ? 220 : 0;
-  const total = CALLOUT_FEE + labourFee + cleaningFee + handymanFee;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -122,10 +104,10 @@ function QuotePage() {
           </div>
           <div className="text-right">
             <div className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground">
-              Live total
+              Items picked
             </div>
             <div className="font-display text-lg text-primary leading-none">
-              £{total.toLocaleString()}
+              {selectedCount}
             </div>
           </div>
         </div>
@@ -134,27 +116,18 @@ function QuotePage() {
       <main className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-10 grid lg:grid-cols-12 gap-6">
         {/* Rooms / catalog */}
         <section className="lg:col-span-8 space-y-6">
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <div className="text-[10px] font-mono uppercase tracking-[0.25em] text-primary mb-1">
-                Step 02 · Tick what's in each room
-              </div>
-              <h1 className="font-display text-2xl md:text-3xl uppercase leading-none">
-                Inventory
-              </h1>
-              <p className="mt-2 text-xs text-muted-foreground max-w-md">
-                Some essentials are already ticked for you. Add anything else
-                you've got — pricing is by crew hours, not per item.
-              </p>
+          <div>
+            <div className="text-[10px] font-mono uppercase tracking-[0.25em] text-primary mb-1">
+              Step 02 · Walk through each room
             </div>
-            <div className="text-right">
-              <div className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground">
-                Workload
-              </div>
-              <div className="font-display text-xl">
-                {difficultyLabel(totalDifficulty)}
-              </div>
-            </div>
+            <h1 className="font-display text-2xl md:text-3xl uppercase leading-none">
+              Inventory
+            </h1>
+            <p className="mt-2 text-xs text-muted-foreground max-w-md">
+              The scene shows the statement pieces we expect in each room. The
+              checklist below catches anything else you've got — tick whatever
+              applies.
+            </p>
           </div>
 
           {/* Property size */}
@@ -196,13 +169,13 @@ function QuotePage() {
           ))}
         </section>
 
-        {/* Sidebar: quote */}
+        {/* Sidebar: summary */}
         <aside className="lg:col-span-4">
           <div className="lg:sticky lg:top-20 space-y-4">
             <div className="bg-card border border-border p-5">
               <div className="flex items-center justify-between mb-4 pb-4 border-b border-border">
                 <div className="font-display text-xl uppercase leading-none">
-                  Your Quote
+                  Your Brief
                 </div>
                 <button
                   onClick={() => setSelected(new Set())}
@@ -215,51 +188,38 @@ function QuotePage() {
               </div>
 
               <div className="space-y-2 mb-4 text-sm">
-                <Row label="Call-out & van" value={`£${CALLOUT_FEE}`} />
+                <Row label={blueprint.title} value={`${sqm} m²`} />
                 <Row
-                  label={`Crew · 2 movers · ${hours}h`}
-                  value={`£${labourFee}`}
+                  label="Items selected"
+                  value={`${selectedCount}`}
                 />
                 <Row
-                  label={`Workload · ${difficultyLabel(totalDifficulty)}`}
-                  value={`${selectedCount} item${selectedCount === 1 ? "" : "s"}`}
+                  label="Rooms"
+                  value={`${blueprint.rooms.length}`}
                 />
-                {extras.cleaning && (
-                  <Row label="End-of-tenancy clean" value={`£${cleaningFee}`} />
-                )}
-                {extras.handyman && (
-                  <Row label="Handyman & touch-ups" value={`£${handymanFee}`} />
-                )}
               </div>
-
-              <div className="pt-4 border-t border-border flex items-baseline justify-between">
-                <span className="text-xs font-bold uppercase tracking-widest">
-                  Estimated total
-                </span>
-                <span className="font-display text-3xl text-primary">
-                  £{total.toLocaleString()}
-                </span>
-              </div>
-              <p className="mt-1 text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
-                £{HOURLY_RATE}/hr · 2-mover crew · min {hours}h booked
-              </p>
 
               {/* Extras */}
-              <div className="mt-5 space-y-2">
-                <ExtraToggle
-                  label="Add end-of-tenancy clean"
-                  enabled={extras.cleaning}
-                  onToggle={() =>
-                    setExtras((e) => ({ ...e, cleaning: !e.cleaning }))
-                  }
-                />
-                <ExtraToggle
-                  label="Add handyman & painting"
-                  enabled={extras.handyman}
-                  onToggle={() =>
-                    setExtras((e) => ({ ...e, handyman: !e.handyman }))
-                  }
-                />
+              <div className="pt-4 border-t border-border">
+                <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-2">
+                  Add services
+                </div>
+                <div className="space-y-2">
+                  <ExtraToggle
+                    label="End-of-tenancy clean"
+                    enabled={extras.cleaning}
+                    onToggle={() =>
+                      setExtras((e) => ({ ...e, cleaning: !e.cleaning }))
+                    }
+                  />
+                  <ExtraToggle
+                    label="Handyman & painting"
+                    enabled={extras.handyman}
+                    onToggle={() =>
+                      setExtras((e) => ({ ...e, handyman: !e.handyman }))
+                    }
+                  />
+                </div>
               </div>
 
               <button
@@ -273,8 +233,8 @@ function QuotePage() {
               <p className="mt-3 inline-flex items-start gap-2 text-[10px] text-muted-foreground leading-relaxed">
                 <ShieldCheck className="size-3.5 shrink-0 mt-0.5 text-accent" />
                 <span>
-                  Your inventory and address details are encrypted in transit. We'll
-                  confirm by call before any booking is locked in.
+                  We'll review your brief and call you back with a tailored
+                  quote. No card needed at this step.
                 </span>
               </p>
             </div>
@@ -315,6 +275,14 @@ function RoomCard({
         </div>
       </div>
 
+      {/* Statement scene */}
+      <div className="mb-4">
+        <RoomScene roomId={roomId} />
+      </div>
+
+      <div className="text-[10px] font-mono uppercase tracking-[0.25em] text-muted-foreground mb-2">
+        Anything else? Tick what applies
+      </div>
       <div className="grid sm:grid-cols-2 gap-2">
         {catalog.map((it) => {
           const key = `${roomId}:${it.id}`;
@@ -343,27 +311,11 @@ function RoomCard({
                 </span>
                 <span className="truncate font-medium">{it.label}</span>
               </span>
-              <DifficultyDots level={it.difficulty} />
             </button>
           );
         })}
       </div>
     </div>
-  );
-}
-
-function DifficultyDots({ level }: { level: 1 | 2 | 3 }) {
-  return (
-    <span className="flex items-center gap-0.5 shrink-0" title={`Difficulty: ${level}/3`}>
-      {[1, 2, 3].map((i) => (
-        <span
-          key={i}
-          className={`size-1.5 rounded-full ${
-            i <= level ? "bg-primary" : "bg-border"
-          }`}
-        />
-      ))}
-    </span>
   );
 }
 
