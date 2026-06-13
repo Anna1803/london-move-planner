@@ -3,6 +3,7 @@ import { Header } from "@/components/Header";
 import { Hero } from "@/components/Hero";
 import { Services } from "@/components/Services";
 import { CategoryPicker } from "@/components/CategoryPicker";
+import { About } from "@/components/About";
 import { Security } from "@/components/Security";
 import { Footer } from "@/components/Footer";
 
@@ -32,6 +33,7 @@ function Index() {
       <main>
         <Hero />
         <Services />
+        <About />
         <CategoryPicker />
         <Security />
       </main>
