@@ -37,15 +37,15 @@ export function CategoryPicker() {
       <div className="max-w-7xl mx-auto px-5 md:px-8">
         <div className="mb-14">
           <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-primary mb-3">
-            Step 01 · Choose your battlefield
+            Step 01 · Choose your property
           </div>
           <h2 className="font-display text-4xl md:text-6xl uppercase leading-[0.9] text-balance max-w-3xl">
             Tap your property type.<br />
-            <span className="text-primary">We'll draw the floor plan.</span>
+            <span className="text-primary">We'll take it from there.</span>
           </h2>
           <p className="mt-5 max-w-xl text-sm text-muted-foreground leading-relaxed">
-            Then click the furniture you're taking from above. No forms, no haggling —
-            a live volume estimate and price builds as you go.
+            Drop us a few details — name, address, move date — and The Boys will come
+            back with a tailored quote.
           </p>
         </div>
 
