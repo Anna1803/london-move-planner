@@ -18,7 +18,9 @@ export type Database = {
         Row: {
           address: string
           created_at: string
+          end_of_tenancy_cleaning: boolean
           first_name: string
+          handyman_services: boolean
           id: string
           last_name: string
           move_date: string
@@ -29,7 +31,9 @@ export type Database = {
         Insert: {
           address: string
           created_at?: string
+          end_of_tenancy_cleaning?: boolean
           first_name: string
+          handyman_services?: boolean
           id?: string
           last_name: string
           move_date: string
@@ -40,7 +44,9 @@ export type Database = {
         Update: {
           address?: string
           created_at?: string
+          end_of_tenancy_cleaning?: boolean
           first_name?: string
+          handyman_services?: boolean
           id?: string
           last_name?: string
           move_date?: string
