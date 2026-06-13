@@ -204,22 +204,29 @@ function QuotePage() {
                 />
               </Field>
 
-              <label className="flex items-start gap-3 p-4 border border-border bg-background/40 cursor-pointer hover:border-foreground/40 transition-colors">
-                <input
-                  type="checkbox"
-                  checked={packaging}
-                  onChange={(e) => setPackaging(e.target.checked)}
-                  className="mt-0.5 size-4 accent-primary"
-                />
-                <span>
-                  <span className="block text-sm font-bold uppercase tracking-wider">
-                    I need packaging for everything
-                  </span>
-                  <span className="block text-xs text-muted-foreground mt-1">
-                    Boxes, bubble wrap, tape and the crew packing it for you.
-                  </span>
+              <div className="space-y-2">
+                <span className="block text-[10px] font-mono uppercase tracking-[0.25em] text-muted-foreground mb-1.5">
+                  Add-on services
                 </span>
-              </label>
+                <AddonCheckbox
+                  checked={packaging}
+                  onChange={setPackaging}
+                  title="I need packaging for everything"
+                  description="Boxes, bubble wrap, tape and the crew packing it for you."
+                />
+                <AddonCheckbox
+                  checked={cleaning}
+                  onChange={setCleaning}
+                  title="End-of-tenancy cleaning"
+                  description="Deep clean after the move so you get your deposit back."
+                />
+                <AddonCheckbox
+                  checked={handyman}
+                  onChange={setHandyman}
+                  title="Handyman services"
+                  description="Furniture assembly, mounting, small repairs at the new place."
+                />
+              </div>
 
               <Field label="Anything else? (optional)">
                 <textarea
