@@ -15,6 +15,8 @@ const formSchema = z.object({
   last_name: z.string().trim().min(1, "Surname is required").max(100),
   address: z.string().trim().min(3, "Address is required").max(500),
   packaging_required: z.boolean(),
+  end_of_tenancy_cleaning: z.boolean(),
+  handyman_services: z.boolean(),
   move_date: z.string().min(1, "Pick a date"),
   notes: z.string().trim().max(2000).optional(),
 });
