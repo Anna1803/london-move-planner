@@ -68,6 +68,8 @@ function QuotePage() {
   const [lastName, setLastName] = useState("");
   const [address, setAddress] = useState("");
   const [packaging, setPackaging] = useState(false);
+  const [cleaning, setCleaning] = useState(false);
+  const [handyman, setHandyman] = useState(false);
   const [moveDate, setMoveDate] = useState("");
   const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -83,6 +85,8 @@ function QuotePage() {
       last_name: lastName,
       address,
       packaging_required: packaging,
+      end_of_tenancy_cleaning: cleaning,
+      handyman_services: handyman,
       move_date: moveDate,
       notes: notes || undefined,
     });
