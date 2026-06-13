@@ -297,3 +297,30 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     </label>
   );
 }
+
+function AddonCheckbox({
+  checked,
+  onChange,
+  title,
+  description,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  title: string;
+  description: string;
+}) {
+  return (
+    <label className="flex items-start gap-3 p-4 border border-border bg-background/40 cursor-pointer hover:border-foreground/40 transition-colors">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        className="mt-0.5 size-4 accent-primary"
+      />
+      <span>
+        <span className="block text-sm font-bold uppercase tracking-wider">{title}</span>
+        <span className="block text-xs text-muted-foreground mt-1">{description}</span>
+      </span>
+    </label>
+  );
+}
