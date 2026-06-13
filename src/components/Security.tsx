@@ -38,7 +38,7 @@ export function Security() {
             </h2>
             <p className="mt-6 text-sm text-muted-foreground leading-relaxed max-w-md">
               When you book a move, you're trusting strangers with your address and the date
-              your whole life will be in a van. We get it — so we keep things simple,
+              your whole life will be in a van. We get it so we keep things simple,
               private, and honest.
             </p>
           </div>

@@ -34,7 +34,7 @@ export function Hero() {
 
           <p className="mt-6 max-w-md text-base md:text-lg text-muted-foreground leading-relaxed">
             <span className="text-foreground font-semibold">The Boys</span> handle the
-            heavy lifting, the end-of-tenancy scrub, and the broken bits — so London's worst
+            heavy lifting, the end-of-tenancy scrub, and the broken bits, so London's worst
             chore becomes someone else's problem.
           </p>
 
@@ -61,7 +61,7 @@ export function Hero() {
               <span>"No diabolical&nbsp;moving day."</span>
             </div>
             <div className="mt-2 text-[10px] font-mono uppercase tracking-widest opacity-70">
-              <span>— Hackney client, May</span>
+              <span>- Hackney client, May</span>
             </div>
           </div>
         </div>

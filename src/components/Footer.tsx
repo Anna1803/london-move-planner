@@ -21,7 +21,7 @@ export function Footer() {
           <ul className="space-y-2 text-sm">
             <li>hello@theboys.london</li>
             <li>020 0000 0000</li>
-            <li>Mon–Sat · 07:00–20:00</li>
+            <li>Mon–Sat · 06:00–22:00</li>
           </ul>
         </div>
 

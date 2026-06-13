@@ -44,7 +44,7 @@ export function CategoryPicker() {
             <span className="text-primary">We'll take it from there.</span>
           </h2>
           <p className="mt-5 max-w-xl text-sm text-muted-foreground leading-relaxed">
-            Drop us a few details — name, address, move date — and The Boys will come
+            Drop us a few details — name, address, move date and The Boys will come
             back with a tailored quote.
           </p>
         </div>

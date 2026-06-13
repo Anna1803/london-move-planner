@@ -13,7 +13,7 @@ const traits = [
   },
   {
     icon: Sparkles,
-    title: "5+ years on the road",
+    title: "8+ years on the road",
     body: "We've moved studios, family homes, offices, and everything in between across London. We've seen the tight staircase — twice.",
   },
 ];
@@ -34,13 +34,13 @@ export function About() {
             <div className="mt-6 space-y-4 text-sm md:text-base text-muted-foreground leading-relaxed max-w-md">
               <p>
                 We're a team of <span className="text-foreground font-semibold">young professionals</span>
-                {" "}with more than <span className="text-foreground font-semibold">5 years</span> in the
+                {" "}with more than <span className="text-foreground font-semibold">8 years</span> in the
                 removals game. We've spent enough time inside other people's vans to know exactly
                 what's broken about moving day.
               </p>
               <p>
                 So we started our own thing. Our goal: <span className="text-foreground">change how
-                moving feels</span> — flexible, honest, almost telepathic. You tell us a bit, we
+                moving feels</span> flexible, honest, almost telepathic. You tell us a bit, we
                 read between the lines, and we handle the rest.
               </p>
               <p>
