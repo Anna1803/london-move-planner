@@ -14,7 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      quote_requests: {
+        Row: {
+          address: string
+          created_at: string
+          first_name: string
+          id: string
+          last_name: string
+          move_date: string
+          notes: string | null
+          packaging_required: boolean
+          property_type: Database["public"]["Enums"]["property_type"]
+        }
+        Insert: {
+          address: string
+          created_at?: string
+          first_name: string
+          id?: string
+          last_name: string
+          move_date: string
+          notes?: string | null
+          packaging_required?: boolean
+          property_type: Database["public"]["Enums"]["property_type"]
+        }
+        Update: {
+          address?: string
+          created_at?: string
+          first_name?: string
+          id?: string
+          last_name?: string
+          move_date?: string
+          notes?: string | null
+          packaging_required?: boolean
+          property_type?: Database["public"]["Enums"]["property_type"]
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +58,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      property_type: "house" | "apartment" | "office"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +185,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      property_type: ["house", "apartment", "office"],
+    },
   },
 } as const
