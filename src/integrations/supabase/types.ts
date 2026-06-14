@@ -25,7 +25,13 @@ export type Database = {
           last_name: string
           move_date: string
           moving_from_address: string
+          moving_from_number: string | null
+          moving_from_postcode: string | null
+          moving_from_street: string | null
           moving_to_address: string
+          moving_to_number: string | null
+          moving_to_postcode: string | null
+          moving_to_street: string | null
           notes: string | null
           packaging_required: boolean
           phone: string
@@ -42,7 +48,13 @@ export type Database = {
           last_name: string
           move_date: string
           moving_from_address: string
+          moving_from_number?: string | null
+          moving_from_postcode?: string | null
+          moving_from_street?: string | null
           moving_to_address: string
+          moving_to_number?: string | null
+          moving_to_postcode?: string | null
+          moving_to_street?: string | null
           notes?: string | null
           packaging_required?: boolean
           phone: string
@@ -59,7 +71,13 @@ export type Database = {
           last_name?: string
           move_date?: string
           moving_from_address?: string
+          moving_from_number?: string | null
+          moving_from_postcode?: string | null
+          moving_from_street?: string | null
           moving_to_address?: string
+          moving_to_number?: string | null
+          moving_to_postcode?: string | null
+          moving_to_street?: string | null
           notes?: string | null
           packaging_required?: boolean
           phone?: string
