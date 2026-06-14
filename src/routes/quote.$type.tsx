@@ -13,11 +13,15 @@ const PROPERTY_LABELS: Record<string, { title: string; tagline: string }> = {
 const formSchema = z.object({
   first_name: z.string().trim().min(1, "First name is required").max(100),
   last_name: z.string().trim().min(1, "Surname is required").max(100),
-  address: z.string().trim().min(3, "Address is required").max(500),
+  email: z.string().trim().email("Enter a valid email").max(255),
+  phone: z.string().trim().min(5, "Phone is required").max(30),
+  moving_from_address: z.string().trim().min(3, "Moving-from address is required").max(500),
+  moving_to_address: z.string().trim().min(3, "Moving-to address is required").max(500),
   packaging_required: z.boolean(),
   end_of_tenancy_cleaning: z.boolean(),
   handyman_services: z.boolean(),
   move_date: z.string().min(1, "Pick a date"),
+  preferred_time: z.string().min(1, "Pick a preferred time"),
   notes: z.string().trim().max(2000).optional(),
 });
 
@@ -60,17 +64,29 @@ export const Route = createFileRoute("/quote/$type")({
   ),
 });
 
+const TIME_OPTIONS = [
+  "Early morning (7–9am)",
+  "Morning (9am–12pm)",
+  "Afternoon (12–5pm)",
+  "Evening (5–8pm)",
+  "Flexible / any time",
+];
+
 function QuotePage() {
   const { type } = useParams({ from: "/quote/$type" });
   const meta = PROPERTY_LABELS[type];
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [address, setAddress] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [fromAddress, setFromAddress] = useState("");
+  const [toAddress, setToAddress] = useState("");
   const [packaging, setPackaging] = useState(false);
   const [cleaning, setCleaning] = useState(false);
   const [handyman, setHandyman] = useState(false);
   const [moveDate, setMoveDate] = useState("");
+  const [preferredTime, setPreferredTime] = useState("");
   const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -83,11 +99,15 @@ function QuotePage() {
     const parsed = formSchema.safeParse({
       first_name: firstName,
       last_name: lastName,
-      address,
+      email,
+      phone,
+      moving_from_address: fromAddress,
+      moving_to_address: toAddress,
       packaging_required: packaging,
       end_of_tenancy_cleaning: cleaning,
       handyman_services: handyman,
       move_date: moveDate,
+      preferred_time: preferredTime,
       notes: notes || undefined,
     });
 
@@ -183,26 +203,79 @@ function QuotePage() {
                 </Field>
               </div>
 
-              <Field label="Address">
+              <div className="grid sm:grid-cols-2 gap-4">
+                <Field label="Email address">
+                  <input
+                    required
+                    type="email"
+                    maxLength={255}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    className="input"
+                  />
+                </Field>
+                <Field label="Phone number">
+                  <input
+                    required
+                    type="tel"
+                    maxLength={30}
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="+44 ..."
+                    className="input"
+                  />
+                </Field>
+              </div>
+
+              <Field label="Moving from (current address)">
                 <input
                   required
                   maxLength={500}
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
+                  value={fromAddress}
+                  onChange={(e) => setFromAddress(e.target.value)}
                   placeholder="Street, city, postcode"
                   className="input"
                 />
               </Field>
 
-              <Field label="Preferred move date">
+              <Field label="Moving to (new address)">
                 <input
                   required
-                  type="date"
-                  value={moveDate}
-                  onChange={(e) => setMoveDate(e.target.value)}
+                  maxLength={500}
+                  value={toAddress}
+                  onChange={(e) => setToAddress(e.target.value)}
+                  placeholder="Street, city, postcode"
                   className="input"
                 />
               </Field>
+
+              <div className="grid sm:grid-cols-2 gap-4">
+                <Field label="Preferred move date">
+                  <input
+                    required
+                    type="date"
+                    value={moveDate}
+                    onChange={(e) => setMoveDate(e.target.value)}
+                    className="input"
+                  />
+                </Field>
+                <Field label="Preferred time">
+                  <select
+                    required
+                    value={preferredTime}
+                    onChange={(e) => setPreferredTime(e.target.value)}
+                    className="input"
+                  >
+                    <option value="">Pick a time…</option>
+                    {TIME_OPTIONS.map((t) => (
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+              </div>
 
               <div className="space-y-2">
                 <span className="block text-[10px] font-mono uppercase tracking-[0.25em] text-muted-foreground mb-1.5">
