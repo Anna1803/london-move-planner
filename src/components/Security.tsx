@@ -4,7 +4,7 @@ const points = [
   {
     icon: ShieldCheck,
     title: "Safe connection",
-    body: "Everything you type on this site — your name, address, move date — travels through a secure, padlocked connection. Same tech your bank uses.",
+    body: "Everything you type on this site - your name, address, move date - travels through a secure, padlocked connection. Same tech your bank uses.",
   },
   {
     icon: Lock,
@@ -30,7 +30,7 @@ export function Security() {
       <div className="relative max-w-7xl mx-auto px-5 md:px-8">
         <div className="grid lg:grid-cols-12 gap-10">
           <div className="lg:col-span-5">
-            <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-primary mb-3">
+            <div className="text-[15px] font-mono uppercase tracking-[0.3em] text-primary mb-3">
               Your privacy
             </div>
             <h2 className="font-display text-4xl md:text-6xl uppercase leading-[0.9] text-balance">

@@ -32,8 +32,8 @@ function Index() {
       <Header />
       <main>
         <Hero />
-        <Services />
         <About />
+        <Services />
         <CategoryPicker />
         <Security />
       </main>

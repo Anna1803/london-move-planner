@@ -10,7 +10,7 @@ const categories = [
     image: houseImg,
     title: "House",
     subtitle: "Townhouse · Terrace · Detached",
-    blurb: "Multi-floor moves with bedrooms, living, kitchen and the lot.",
+    blurb: "Complete multi-floor moves with bedrooms, living rooms, kitchen and everything in between.",
     number: "01",
   },
   {
@@ -36,7 +36,7 @@ export function CategoryPicker() {
     <section id="quote" className="relative border-b border-border py-20 md:py-28">
       <div className="max-w-7xl mx-auto px-5 md:px-8">
         <div className="mb-14">
-          <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-primary mb-3">
+          <div className="text-[15px] font-mono uppercase tracking-[0.3em] text-primary mb-3">
             Step 01 · Choose your property
           </div>
           <h2 className="font-display text-4xl md:text-6xl uppercase leading-[0.9] text-balance max-w-3xl">
@@ -44,8 +44,6 @@ export function CategoryPicker() {
             <span className="text-primary">We'll take it from there.</span>
           </h2>
           <p className="mt-5 max-w-xl text-sm text-muted-foreground leading-relaxed">
-            Drop us a few details — name, address, move date and The Boys will come
-            back with a tailored quote.
           </p>
         </div>
 
@@ -92,7 +90,7 @@ export function CategoryPicker() {
                   {c.blurb}
                 </p>
                 <div className="mt-4 inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-primary group-hover:gap-3 transition-all">
-                  Start building
+                  Request a quote
                   <ArrowUpRight className="size-3" />
                 </div>
               </div>

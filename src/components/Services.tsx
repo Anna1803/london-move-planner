@@ -6,16 +6,16 @@ const services = [
     tag: "Vol. 01",
     title: "Removals",
     blurb:
-      "Door-to-door across London. Crated, padded, tracked. We treat your stuff like it's our own — only better.",
-    points: ["Packing materials supplied", "GPS-tracked vans", "Goods-in-transit insurance"],
+      "Door-to-door across London. Crated, padded, tracked. We treat your stuff like it's our own - only better.",
+    points: ["Packing materials supplied on request", "GPS-tracked vans", "Goods-in-transit insurance"],
   },
   {
     icon: Sparkles,
     tag: "Vol. 02",
     title: "End-of-tenancy Clean",
     blurb:
-      "Deposit-back deep clean to letting-agent standard. Ovens, limescale, skirting — every diabolical corner.",
-    points: ["Agent-approved checklist", "Eco-friendly products", "48-hour re-clean guarantee"],
+      "Deposit-back deep clean to letting-agent standard. Ovens, limescale, skirting - every diabolical corner.",
+    points: ["Agent-approved checklist", "Eco-friendly products", "Carpet cleaning"],
   },
   {
     icon: Wrench,
@@ -33,7 +33,7 @@ export function Services() {
       <div className="max-w-7xl mx-auto px-5 md:px-8">
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-14">
           <div>
-            <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-primary mb-3">
+            <div className="text-[15px] font-mono uppercase tracking-[0.3em] text-primary mb-3">
               Three powers · one crew
             </div>
             <h2 className="font-display text-4xl md:text-6xl uppercase leading-[0.9] text-balance">
@@ -61,7 +61,7 @@ export function Services() {
                   <div className="size-12 grid place-items-center bg-background border border-border group-hover:border-primary group-hover:text-primary transition-colors">
                     <Icon className="size-5" strokeWidth={1.5} />
                   </div>
-                  <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                  <span className="font-mono text-[15px] uppercase tracking-widest text-muted-foreground">
                     {s.tag}
                   </span>
                 </div>

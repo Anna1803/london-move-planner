@@ -19,7 +19,7 @@ export function Hero() {
         <div>
           <div className="inline-flex items-center gap-2 mb-6 skew-tag bg-primary/10 border border-primary/40 px-2.5 py-1">
             <span className="size-1.5 rounded-full bg-primary animate-flicker" />
-            <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-primary">
+            <span className="text-[15px] font-mono uppercase tracking-[0.25em] text-primary">
               <span>Operational across all 32 boroughs</span>
             </span>
           </div>
