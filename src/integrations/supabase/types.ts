@@ -16,42 +16,54 @@ export type Database = {
     Tables: {
       quote_requests: {
         Row: {
-          address: string
           created_at: string
+          email: string
           end_of_tenancy_cleaning: boolean
           first_name: string
           handyman_services: boolean
           id: string
           last_name: string
           move_date: string
+          moving_from_address: string
+          moving_to_address: string
           notes: string | null
           packaging_required: boolean
+          phone: string
+          preferred_time: string
           property_type: Database["public"]["Enums"]["property_type"]
         }
         Insert: {
-          address: string
           created_at?: string
+          email: string
           end_of_tenancy_cleaning?: boolean
           first_name: string
           handyman_services?: boolean
           id?: string
           last_name: string
           move_date: string
+          moving_from_address: string
+          moving_to_address: string
           notes?: string | null
           packaging_required?: boolean
+          phone: string
+          preferred_time: string
           property_type: Database["public"]["Enums"]["property_type"]
         }
         Update: {
-          address?: string
           created_at?: string
+          email?: string
           end_of_tenancy_cleaning?: boolean
           first_name?: string
           handyman_services?: boolean
           id?: string
           last_name?: string
           move_date?: string
+          moving_from_address?: string
+          moving_to_address?: string
           notes?: string | null
           packaging_required?: boolean
+          phone?: string
+          preferred_time?: string
           property_type?: Database["public"]["Enums"]["property_type"]
         }
         Relationships: []
