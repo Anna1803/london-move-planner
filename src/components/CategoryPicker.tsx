@@ -10,7 +10,8 @@ const categories = [
     image: houseImg,
     title: "House",
     subtitle: "Townhouse · Terrace · Detached",
-    blurb: "Complete multi-floor moves with bedrooms, living rooms, kitchen and everything in between.",
+    blurb:
+      "Complete multi-floor moves with bedrooms, living rooms, kitchen and everything in between.",
     number: "01",
   },
   {
@@ -40,11 +41,11 @@ export function CategoryPicker() {
             Step 01 · Choose your property
           </div>
           <h2 className="font-display text-4xl md:text-6xl uppercase leading-[0.9] text-balance max-w-3xl">
-            Tap your property type.<br />
+            Tap your property type.
+            <br />
             <span className="text-primary">We'll take it from there.</span>
           </h2>
-          <p className="mt-5 max-w-xl text-sm text-muted-foreground leading-relaxed">
-          </p>
+          <p className="mt-5 max-w-xl text-sm text-muted-foreground leading-relaxed"></p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-5">
@@ -86,9 +87,7 @@ export function CategoryPicker() {
               </div>
 
               <div className="p-5 border-t border-border">
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {c.blurb}
-                </p>
+                <p className="text-sm text-muted-foreground leading-relaxed">{c.blurb}</p>
                 <div className="mt-4 inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-primary group-hover:gap-3 transition-all">
                   Request a quote
                   <ArrowUpRight className="size-3" />

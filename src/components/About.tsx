@@ -20,7 +20,7 @@ const traits = [
     icon: ShieldCheck,
     title: "Peace of mind",
     body: "Moving can be stressful enough. We take care of your belongings every step of the way, so you can relax knowing everything is being handled properly.",
-},
+  },
 ];
 
 export function About() {
@@ -38,18 +38,22 @@ export function About() {
             </h2>
             <div className="mt-6 space-y-4 text-sm md:text-base text-muted-foreground leading-relaxed max-w-md">
               <p>
-                We're a team of <span className="text-foreground font-semibold">young professionals</span>
-                {" "}with more than <span className="text-foreground font-semibold">8 years</span> in the
-                removals game. We've spent enough time inside other companies' vans to know exactly
-                what's broken about moving day.
+                We're a team of{" "}
+                <span className="text-foreground font-semibold">young professionals</span> with more
+                than <span className="text-foreground font-semibold">8 years</span> in the removals
+                game. We've spent enough time inside other companies' vans to know exactly what's
+                broken about moving day.
               </p>
               <p>
-                So we started our own thing. Our goal: <span className="text-foreground">change how
-                moving feels</span>: flexible, honest, almost telepathic. You tell us a bit and we handle the rest.
+                So we started our own thing. Our goal:{" "}
+                <span className="text-foreground">change how moving feels</span>: flexible, honest,
+                almost telepathic. You tell us a bit and we handle the rest.
               </p>
               <p>
-                We're not doing this because someone told us to. We're doing it because we want
-                to build <span className="text-foreground font-semibold">something we're proud of</span>. That energy goes into every box we carry.
+                We're not doing this because someone told us to. We're doing it because we want to
+                build{" "}
+                <span className="text-foreground font-semibold">something we're proud of</span>.
+                That energy goes into every box we carry.
               </p>
             </div>
           </div>
@@ -66,9 +70,7 @@ export function About() {
                     <Icon className="size-4" strokeWidth={1.5} />
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold uppercase tracking-wider mb-1">
-                      {t.title}
-                    </h3>
+                    <h3 className="text-sm font-bold uppercase tracking-wider mb-1">{t.title}</h3>
                     <p className="text-xs md:text-sm text-muted-foreground leading-relaxed">
                       {t.body}
                     </p>

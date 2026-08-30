@@ -52,7 +52,7 @@
     /* Signature blood red */
     --primary: oklch(0.58 0.22 27);
     --primary-foreground: oklch(0.98 0 0);
-    --blood: oklch(0.50 0.24 27);
+    --blood: oklch(0.5 0.24 27);
 
     --secondary: oklch(0.22 0.018 25);
     --secondary-foreground: oklch(0.96 0.008 80);
@@ -77,9 +77,9 @@
     --font-sans: "Inter", system-ui, sans-serif;
     --font-mono: "JetBrains Mono", monospace;
 
-    --gradient-hero: radial-gradient(circle at 30% 20%, oklch(0.50 0.24 27 / 0.4), transparent 60%);
-    --gradient-blood: linear-gradient(180deg, oklch(0.50 0.24 27) 0%, oklch(0.40 0.20 27) 100%);
-    --shadow-hero: 0 20px 60px -20px oklch(0.50 0.24 27 / 0.6);
+    --gradient-hero: radial-gradient(circle at 30% 20%, oklch(0.5 0.24 27 / 0.4), transparent 60%);
+    --gradient-blood: linear-gradient(180deg, oklch(0.5 0.24 27) 0%, oklch(0.4 0.2 27) 100%);
+    --shadow-hero: 0 20px 60px -20px oklch(0.5 0.24 27 / 0.6);
     --shadow-pop: 0 8px 0 0 oklch(0.15 0.012 25), 0 12px 30px -8px oklch(0 0 0 / 0.5);
   }
 
@@ -113,7 +113,7 @@
 
   /* Halftone dot texture overlay */
   .halftone {
-    background-image: radial-gradient(oklch(0.50 0.24 27 / 0.18) 1px, transparent 1.2px);
+    background-image: radial-gradient(oklch(0.5 0.24 27 / 0.18) 1px, transparent 1.2px);
     background-size: 6px 6px;
   }
 
@@ -147,8 +147,13 @@
   }
 
   @keyframes flicker {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.85; }
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.85;
+    }
   }
   .animate-flicker {
     animation: flicker 3s ease-in-out infinite;

@@ -7,7 +7,11 @@ const services = [
     title: "Removals",
     blurb:
       "Door-to-door across London. Crated, padded, tracked. We treat your stuff like it's our own - only better.",
-    points: ["Packing materials supplied on request", "GPS-tracked vans", "Goods-in-transit insurance"],
+    points: [
+      "Packing materials supplied on request",
+      "GPS-tracked vans",
+      "Goods-in-transit insurance",
+    ],
   },
   {
     icon: Sparkles,
@@ -42,8 +46,8 @@ export function Services() {
             </h2>
           </div>
           <p className="max-w-sm text-sm text-muted-foreground">
-            Most movers vanish once the van pulls away. We stay until the keys are
-            handed back, the walls are smooth and the oven sparkles.
+            Most movers vanish once the van pulls away. We stay until the keys are handed back, the
+            walls are smooth and the oven sparkles.
           </p>
         </div>
 
@@ -66,19 +70,12 @@ export function Services() {
                   </span>
                 </div>
 
-                <h3 className="font-display text-2xl uppercase leading-none mb-3">
-                  {s.title}
-                </h3>
-                <p className="text-sm text-muted-foreground leading-relaxed mb-5">
-                  {s.blurb}
-                </p>
+                <h3 className="font-display text-2xl uppercase leading-none mb-3">{s.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed mb-5">{s.blurb}</p>
 
                 <ul className="space-y-1.5 border-t border-border pt-4">
                   {s.points.map((p) => (
-                    <li
-                      key={p}
-                      className="flex items-center gap-2 text-xs text-foreground/80"
-                    >
+                    <li key={p} className="flex items-center gap-2 text-xs text-foreground/80">
                       <span className="size-1 bg-primary" />
                       {p}
                     </li>

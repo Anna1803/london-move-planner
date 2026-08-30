@@ -37,9 +37,8 @@ export function Security() {
               We treat your info like <span className="text-primary">our own</span>.
             </h2>
             <p className="mt-6 text-sm text-muted-foreground leading-relaxed max-w-md">
-              When you book a move, you're trusting strangers with your address and the date
-              your whole life will be in a van. We get it so we keep things simple,
-              private, and honest.
+              When you book a move, you're trusting strangers with your address and the date your
+              whole life will be in a van. We get it so we keep things simple, private, and honest.
             </p>
           </div>
 
@@ -54,12 +53,8 @@ export function Security() {
                   <div className="size-9 grid place-items-center bg-background border border-border mb-4 text-accent">
                     <Icon className="size-4" strokeWidth={1.5} />
                   </div>
-                  <h3 className="text-sm font-bold uppercase tracking-wider mb-1.5">
-                    {p.title}
-                  </h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    {p.body}
-                  </p>
+                  <h3 className="text-sm font-bold uppercase tracking-wider mb-1.5">{p.title}</h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed">{p.body}</p>
                 </div>
               );
             })}

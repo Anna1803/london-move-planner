@@ -33,9 +33,9 @@ export function Hero() {
           </h1>
 
           <p className="mt-6 max-w-md text-base md:text-lg text-muted-foreground leading-relaxed">
-            <span className="text-foreground font-semibold">The Boys</span> handle the
-            heavy lifting, the end-of-tenancy scrub, and the broken bits, so London's worst
-            chore becomes someone else's problem.
+            <span className="text-foreground font-semibold">The Boys</span> handle the heavy
+            lifting, the end-of-tenancy scrub, and the broken bits, so London's worst chore becomes
+            someone else's problem.
           </p>
 
           <div className="mt-8 flex flex-wrap gap-3">
@@ -56,7 +56,10 @@ export function Hero() {
         </div>
 
         <div className="hidden md:block relative">
-          <div className="absolute -top-6 -right-6 bg-accent text-accent-foreground p-5 max-w-[260px] skew-tag z-10" style={{ boxShadow: "var(--shadow-pop)" }}>
+          <div
+            className="absolute -top-6 -right-6 bg-accent text-accent-foreground p-5 max-w-[260px] skew-tag z-10"
+            style={{ boxShadow: "var(--shadow-pop)" }}
+          >
             <div className="font-display text-2xl leading-none uppercase">
               <span>"No diabolical&nbsp;moving day."</span>
             </div>

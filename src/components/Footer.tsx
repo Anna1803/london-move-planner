@@ -3,9 +3,7 @@ export function Footer() {
     <footer className="border-t border-border bg-card/30">
       <div className="max-w-7xl mx-auto px-5 md:px-8 py-12 grid md:grid-cols-3 gap-10">
         <div>
-          <div className="font-display text-3xl uppercase leading-none">
-            The Boys
-          </div>
+          <div className="font-display text-3xl uppercase leading-none">The Boys</div>
           <div className="mt-1 text-[10px] font-mono uppercase tracking-[0.25em] text-muted-foreground">
             London removals · cleaning · handyman
           </div>
@@ -30,16 +28,23 @@ export function Footer() {
             Boroughs
           </div>
           <div className="flex flex-wrap gap-1.5">
-            {["Hackney", "Islington", "Camden", "Shoreditch", "Greenwich", "Kensington", "Brixton", "Wandsworth"].map(
-              (b) => (
-                <span
-                  key={b}
-                  className="px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider border border-border"
-                >
-                  {b}
-                </span>
-              ),
-            )}
+            {[
+              "Hackney",
+              "Islington",
+              "Camden",
+              "Shoreditch",
+              "Greenwich",
+              "Kensington",
+              "Brixton",
+              "Wandsworth",
+            ].map((b) => (
+              <span
+                key={b}
+                className="px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider border border-border"
+              >
+                {b}
+              </span>
+            ))}
           </div>
         </div>
       </div>
