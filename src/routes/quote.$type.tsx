@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+import { sendThankYouEmail } from "@/integrations/resend/send-thank-you-email";
+import { calculateQuotePrice } from "@/integrations/pricing/calculate-quote-price";
 
 const PROPERTY_LABELS: Record<string, { title: string; tagline: string }> = {
   house: { title: "House move", tagline: "Townhouse · Terrace · Detached" },
@@ -23,37 +25,125 @@ const postcodeRegex = /^[A-Za-z0-9 -]{3,12}$/;
 const numberRegex = /^[A-Za-z0-9/\- ]{1,20}$/;
 const streetRegex = /^[A-Za-zÀ-ÿ0-9.,' -]{2,200}$/;
 
-const formSchema = z.object({
-  first_name: z
-    .string()
-    .trim()
-    .min(1, "First name is required")
-    .max(100)
-    .regex(nameRegex, "Letters only"),
-  last_name: z
-    .string()
-    .trim()
-    .min(1, "Surname is required")
-    .max(100)
-    .regex(nameRegex, "Letters only"),
-  email: z.string().trim().email("Enter a valid email").max(255),
-  phone: z.string().trim().regex(phoneRegex, "Digits only, e.g. +44 7700 900000"),
+const FLIGHTS_OPTIONS = ["1", "2", "3", "4", "5", "6+"] as const;
 
-  from_street: z.string().trim().regex(streetRegex, "Enter a valid street name"),
-  from_number: z.string().trim().regex(numberRegex, "Enter a valid number"),
-  from_postcode: z.string().trim().regex(postcodeRegex, "Enter a valid postcode"),
+const FURNITURE_OPTIONS = [
+  { value: "sofa", label: "Sofa" },
+  { value: "armchair", label: "Armchair" },
+  { value: "chest_of_drawers", label: "Chest of drawers" },
+  { value: "bed", label: "Bed" },
+  { value: "other_big_pieces", label: "Other big pieces (piano, marble table…)" },
+] as const;
+const FURNITURE_VALUES = FURNITURE_OPTIONS.map((o) => o.value) as [string, ...string[]];
 
-  to_street: z.string().trim().regex(streetRegex, "Enter a valid street name"),
-  to_number: z.string().trim().regex(numberRegex, "Enter a valid number"),
-  to_postcode: z.string().trim().regex(postcodeRegex, "Enter a valid postcode"),
+const BEDROOM_OPTIONS = [
+  { value: "studio", label: "Studio" },
+  { value: "1", label: "1 bedroom" },
+  { value: "2", label: "2 bedrooms" },
+  { value: "3", label: "3 bedrooms" },
+  { value: "4+", label: "4+ bedrooms" },
+] as const;
 
-  packaging_required: z.boolean(),
-  end_of_tenancy_cleaning: z.boolean(),
-  handyman_services: z.boolean(),
-  move_date: z.string().min(1, "Pick a date"),
-  preferred_time: z.string().min(1, "Pick a preferred time"),
-  notes: z.string().trim().max(2000).optional(),
-});
+const OFFICE_AREA_OPTIONS = [
+  { value: "under_500", label: "Under 500 sq ft" },
+  { value: "500_1000", label: "500–1,000 sq ft" },
+  { value: "1000_2500", label: "1,000–2,500 sq ft" },
+  { value: "2500_plus", label: "2,500+ sq ft" },
+] as const;
+
+function buildFormSchema(propertyType: string) {
+  return z
+    .object({
+      first_name: z
+        .string()
+        .trim()
+        .min(1, "First name is required")
+        .max(100)
+        .regex(nameRegex, "Letters only"),
+      last_name: z
+        .string()
+        .trim()
+        .min(1, "Surname is required")
+        .max(100)
+        .regex(nameRegex, "Letters only"),
+      email: z.string().trim().email("Enter a valid email").max(255),
+      phone: z.string().trim().regex(phoneRegex, "Digits only, e.g. +44 7700 900000"),
+
+      bedrooms: z.enum(BEDROOM_OPTIONS.map((o) => o.value) as [string, ...string[]]).optional(),
+      office_area_band: z
+        .enum(OFFICE_AREA_OPTIONS.map((o) => o.value) as [string, ...string[]])
+        .optional(),
+
+      from_street: z.string().trim().regex(streetRegex, "Enter a valid street name"),
+      from_number: z.string().trim().regex(numberRegex, "Enter a valid number"),
+      from_postcode: z.string().trim().regex(postcodeRegex, "Enter a valid postcode"),
+      from_parking: z.boolean(),
+      from_lift: z.boolean(),
+      from_stairs: z.boolean(),
+      from_stairs_flights: z.enum(FLIGHTS_OPTIONS).optional(),
+
+      to_street: z.string().trim().regex(streetRegex, "Enter a valid street name"),
+      to_number: z.string().trim().regex(numberRegex, "Enter a valid number"),
+      to_postcode: z.string().trim().regex(postcodeRegex, "Enter a valid postcode"),
+      to_parking: z.boolean(),
+      to_lift: z.boolean(),
+      to_stairs: z.boolean(),
+      to_stairs_flights: z.enum(FLIGHTS_OPTIONS).optional(),
+
+      packaging_required: z.boolean(),
+      unpacking_required: z.boolean(),
+      end_of_tenancy_cleaning: z.boolean(),
+      handyman_services: z.boolean(),
+      assembly_required: z.boolean(),
+      fragile_items: z.boolean(),
+      furniture_items: z.array(z.enum(FURNITURE_VALUES)),
+      furniture_other_description: z.string().trim().max(500).optional(),
+
+      move_date: z.string().min(1, "Pick a date"),
+      preferred_time: z.string().min(1, "Pick a preferred time"),
+      notes: z.string().trim().max(2000).optional(),
+    })
+    .superRefine((data, ctx) => {
+      if (data.from_stairs && !data.from_stairs_flights) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["from_stairs_flights"],
+          message: "How many flights of stairs at the pickup address?",
+        });
+      }
+      if (data.to_stairs && !data.to_stairs_flights) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["to_stairs_flights"],
+          message: "How many flights of stairs at the drop-off address?",
+        });
+      }
+      if (
+        data.furniture_items.length < 3 &&
+        (!data.furniture_other_description || data.furniture_other_description.length < 3)
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["furniture_other_description"],
+          message: "Select at least 3 items, or tell us what needs moving",
+        });
+      }
+      if ((propertyType === "house" || propertyType === "apartment") && !data.bedrooms) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["bedrooms"],
+          message: "Select the number of bedrooms",
+        });
+      }
+      if (propertyType === "office" && !data.office_area_band) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["office_area_band"],
+          message: "Select the approximate office area",
+        });
+      }
+    });
+}
 
 export const Route = createFileRoute("/quote/$type")({
   beforeLoad: ({ params }) => {
@@ -114,13 +204,31 @@ function QuotePage() {
   const [fromStreet, setFromStreet] = useState("");
   const [fromNumber, setFromNumber] = useState("");
   const [fromPostcode, setFromPostcode] = useState("");
+  const [fromParking, setFromParking] = useState(false);
+  const [fromLift, setFromLift] = useState(false);
+  const [fromStairs, setFromStairs] = useState(false);
+  const [fromStairsFlights, setFromStairsFlights] = useState("");
+
   const [toStreet, setToStreet] = useState("");
   const [toNumber, setToNumber] = useState("");
   const [toPostcode, setToPostcode] = useState("");
+  const [toParking, setToParking] = useState(false);
+  const [toLift, setToLift] = useState(false);
+  const [toStairs, setToStairs] = useState(false);
+  const [toStairsFlights, setToStairsFlights] = useState("");
 
   const [packaging, setPackaging] = useState(false);
+  const [unpacking, setUnpacking] = useState(false);
   const [cleaning, setCleaning] = useState(false);
   const [handyman, setHandyman] = useState(false);
+  const [assembly, setAssembly] = useState(false);
+  const [fragileItems, setFragileItems] = useState(false);
+  const [furniture, setFurniture] = useState<string[]>([]);
+  const [furnitureOtherDescription, setFurnitureOtherDescription] = useState("");
+
+  const [bedrooms, setBedrooms] = useState("");
+  const [officeAreaBand, setOfficeAreaBand] = useState("");
+
   const [moveDate, setMoveDate] = useState("");
   const [preferredTime, setPreferredTime] = useState("");
   const [notes, setNotes] = useState("");
@@ -128,24 +236,45 @@ function QuotePage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
+  function toggleFurniture(value: string) {
+    setFurniture((prev) =>
+      prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value],
+    );
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
 
-    const parsed = formSchema.safeParse({
+    const parsed = buildFormSchema(type).safeParse({
       first_name: firstName,
       last_name: lastName,
       email,
       phone,
+      bedrooms: bedrooms || undefined,
+      office_area_band: officeAreaBand || undefined,
       from_street: fromStreet,
       from_number: fromNumber,
       from_postcode: fromPostcode,
+      from_parking: fromParking,
+      from_lift: fromLift,
+      from_stairs: fromStairs,
+      from_stairs_flights: fromStairs ? fromStairsFlights || undefined : undefined,
       to_street: toStreet,
       to_number: toNumber,
       to_postcode: toPostcode,
+      to_parking: toParking,
+      to_lift: toLift,
+      to_stairs: toStairs,
+      to_stairs_flights: toStairs ? toStairsFlights || undefined : undefined,
       packaging_required: packaging,
+      unpacking_required: unpacking,
       end_of_tenancy_cleaning: cleaning,
       handyman_services: handyman,
+      assembly_required: assembly,
+      fragile_items: fragileItems,
+      furniture_items: furniture,
+      furniture_other_description: furnitureOtherDescription || undefined,
       move_date: moveDate,
       preferred_time: preferredTime,
       notes: notes || undefined,
@@ -159,25 +288,42 @@ function QuotePage() {
     const d = parsed.data;
     const fromCombined = `${d.from_number} ${d.from_street}, ${d.from_postcode}`;
     const toCombined = `${d.to_number} ${d.to_street}, ${d.to_postcode}`;
+    const quoteRequestId = crypto.randomUUID();
 
     setSubmitting(true);
     const { error: insertError } = await supabase.from("quote_requests").insert({
+      id: quoteRequestId,
       property_type: type as "house" | "apartment" | "office",
       first_name: d.first_name,
       last_name: d.last_name,
       email: d.email,
       phone: d.phone,
+      bedrooms: d.bedrooms ?? null,
+      office_area_band: d.office_area_band ?? null,
       moving_from_address: fromCombined,
       moving_to_address: toCombined,
       moving_from_street: d.from_street,
       moving_from_number: d.from_number,
       moving_from_postcode: d.from_postcode,
+      moving_from_parking: d.from_parking,
+      moving_from_lift: d.from_lift,
+      moving_from_stairs: d.from_stairs,
+      moving_from_stairs_flights: d.from_stairs ? d.from_stairs_flights : null,
       moving_to_street: d.to_street,
       moving_to_number: d.to_number,
       moving_to_postcode: d.to_postcode,
+      moving_to_parking: d.to_parking,
+      moving_to_lift: d.to_lift,
+      moving_to_stairs: d.to_stairs,
+      moving_to_stairs_flights: d.to_stairs ? d.to_stairs_flights : null,
       packaging_required: d.packaging_required,
+      unpacking_required: d.unpacking_required,
       end_of_tenancy_cleaning: d.end_of_tenancy_cleaning,
       handyman_services: d.handyman_services,
+      assembly_required: d.assembly_required,
+      fragile_items: d.fragile_items,
+      furniture_items: d.furniture_items,
+      furniture_other_description: d.furniture_other_description || null,
       move_date: d.move_date,
       preferred_time: d.preferred_time,
       notes: d.notes,
@@ -189,6 +335,31 @@ function QuotePage() {
       return;
     }
     setSubmitted(true);
+
+    sendThankYouEmail({
+      data: { firstName: d.first_name, email: d.email, propertyType: type },
+    }).catch((err) => console.error("Failed to send thank-you email:", err));
+
+    calculateQuotePrice({
+      data: {
+        quoteRequestId,
+        propertyType: type as "house" | "apartment" | "office",
+        bedrooms: d.bedrooms ?? null,
+        officeAreaBand: d.office_area_band ?? null,
+        fromLift: d.from_lift,
+        fromStairs: d.from_stairs,
+        fromStairsFlights: d.from_stairs ? (d.from_stairs_flights ?? null) : null,
+        toLift: d.to_lift,
+        toStairs: d.to_stairs,
+        toStairsFlights: d.to_stairs ? (d.to_stairs_flights ?? null) : null,
+        packagingRequired: d.packaging_required,
+        unpackingRequired: d.unpacking_required,
+        endOfTenancyCleaning: d.end_of_tenancy_cleaning,
+        handymanServices: d.handyman_services,
+        assemblyRequired: d.assembly_required,
+        moveDate: d.move_date,
+      },
+    }).catch((err) => console.error("Failed to calculate quote price:", err));
   }
 
   return (
@@ -300,6 +471,43 @@ function QuotePage() {
                 </Field>
               </div>
 
+              <div>
+                <SectionHeader>Property size</SectionHeader>
+                {type === "office" ? (
+                  <Field label="Approximate office area">
+                    <select
+                      required
+                      value={officeAreaBand}
+                      onChange={(e) => setOfficeAreaBand(e.target.value)}
+                      className="qinput qselect"
+                    >
+                      <option value="">Select…</option>
+                      {OFFICE_AREA_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                ) : (
+                  <Field label="Number of bedrooms">
+                    <select
+                      required
+                      value={bedrooms}
+                      onChange={(e) => setBedrooms(e.target.value)}
+                      className="qinput qselect"
+                    >
+                      <option value="">Select…</option>
+                      {BEDROOM_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                )}
+              </div>
+
               <div className="pt-2">
                 <SectionHeader accent="primary">Moving from</SectionHeader>
                 <div className="grid sm:grid-cols-[1fr_120px_140px] gap-4">
@@ -335,6 +543,30 @@ function QuotePage() {
                     />
                   </Field>
                 </div>
+                <div className="grid sm:grid-cols-3 gap-3 mt-3">
+                  <BoolToggle checked={fromParking} onChange={setFromParking} label="Parking" />
+                  <BoolToggle checked={fromLift} onChange={setFromLift} label="Lift" />
+                  <BoolToggle checked={fromStairs} onChange={setFromStairs} label="Stairs" />
+                </div>
+                {fromStairs && (
+                  <div className="mt-3 max-w-[220px]">
+                    <Field label="Flights of stairs">
+                      <select
+                        required
+                        value={fromStairsFlights}
+                        onChange={(e) => setFromStairsFlights(e.target.value)}
+                        className="qinput qselect"
+                      >
+                        <option value="">Select…</option>
+                        {FLIGHTS_OPTIONS.map((f) => (
+                          <option key={f} value={f}>
+                            {f}
+                          </option>
+                        ))}
+                      </select>
+                    </Field>
+                  </div>
+                )}
               </div>
 
               <div>
@@ -372,6 +604,30 @@ function QuotePage() {
                     />
                   </Field>
                 </div>
+                <div className="grid sm:grid-cols-3 gap-3 mt-3">
+                  <BoolToggle checked={toParking} onChange={setToParking} label="Parking" />
+                  <BoolToggle checked={toLift} onChange={setToLift} label="Lift" />
+                  <BoolToggle checked={toStairs} onChange={setToStairs} label="Stairs" />
+                </div>
+                {toStairs && (
+                  <div className="mt-3 max-w-[220px]">
+                    <Field label="Flights of stairs">
+                      <select
+                        required
+                        value={toStairsFlights}
+                        onChange={(e) => setToStairsFlights(e.target.value)}
+                        className="qinput qselect"
+                      >
+                        <option value="">Select…</option>
+                        {FLIGHTS_OPTIONS.map((f) => (
+                          <option key={f} value={f}>
+                            {f}
+                          </option>
+                        ))}
+                      </select>
+                    </Field>
+                  </div>
+                )}
               </div>
 
               <div className="pt-2">
@@ -411,6 +667,45 @@ function QuotePage() {
               </div>
 
               <div>
+                <SectionHeader accent="primary">Furniture</SectionHeader>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Select at least 3 big items — or tell us what you're moving below.
+                </p>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  {FURNITURE_OPTIONS.map((opt) => (
+                    <FurnitureToggle
+                      key={opt.value}
+                      selected={furniture.includes(opt.value)}
+                      onClick={() => toggleFurniture(opt.value)}
+                      label={opt.label}
+                    />
+                  ))}
+                </div>
+                {furniture.length < 3 && (
+                  <div className="mt-3">
+                    <Field label="What's there to be moved?">
+                      <textarea
+                        required
+                        rows={3}
+                        maxLength={500}
+                        value={furnitureOtherDescription}
+                        onChange={(e) => setFurnitureOtherDescription(e.target.value)}
+                        placeholder="In case there aren't 3 big items — e.g. 1 sofa, 1 bed, or just a few bags of books/clothes"
+                        className="qinput resize-none"
+                      />
+                    </Field>
+                  </div>
+                )}
+                <div className="mt-3">
+                  <BoolToggle
+                    checked={fragileItems}
+                    onChange={setFragileItems}
+                    label="Fragile items needing special packing (art, mirrors, glass…)"
+                  />
+                </div>
+              </div>
+
+              <div>
                 <SectionHeader>Add-on services</SectionHeader>
                 <div className="space-y-2">
                   <AddonCheckbox
@@ -418,6 +713,12 @@ function QuotePage() {
                     onChange={setPackaging}
                     title="I need packaging for everything"
                     description="Boxes, bubble wrap, tape and the crew packing it for you."
+                  />
+                  <AddonCheckbox
+                    checked={unpacking}
+                    onChange={setUnpacking}
+                    title="I need unpacking too"
+                    description="We'll unbox everything and clear the packaging away at the new place."
                   />
                   <AddonCheckbox
                     checked={cleaning}
@@ -431,6 +732,12 @@ function QuotePage() {
                     title="Handyman services"
                     description="Furniture assembly, mounting, small repairs at the new place."
                   />
+                  <AddonCheckbox
+                    checked={assembly}
+                    onChange={setAssembly}
+                    title="Furniture assembly / disassembly"
+                    description="Flat-pack beds, wardrobes and tables taken apart and rebuilt for you."
+                  />
                 </div>
               </div>
 
@@ -440,7 +747,7 @@ function QuotePage() {
                   maxLength={2000}
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Access, parking, extra stops, fragile items…"
+                  placeholder="Anything you think slipped through — e.g. big plants"
                   className="qinput resize-none"
                 />
               </Field>
@@ -555,6 +862,56 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       </span>
       {children}
     </label>
+  );
+}
+
+function BoolToggle({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!checked)}
+      className={`flex items-center justify-between gap-2 px-3 py-2.5 border-2 text-left transition-all cursor-pointer ${checked ? "border-primary bg-primary/10" : "border-border bg-background/40 hover:border-accent/60"}`}
+    >
+      <span className="text-xs font-bold uppercase tracking-wider">{label}</span>
+      <span
+        className={`shrink-0 text-[10px] font-mono uppercase tracking-widest ${checked ? "text-primary" : "text-muted-foreground"}`}
+      >
+        {checked ? "Yes" : "No"}
+      </span>
+    </button>
+  );
+}
+
+function FurnitureToggle({
+  selected,
+  onClick,
+  label,
+}: {
+  selected: boolean;
+  onClick: () => void;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex items-center gap-2 px-3 py-2.5 border-2 text-left transition-all cursor-pointer ${selected ? "border-primary bg-primary/10" : "border-border bg-background/40 hover:border-accent/60"}`}
+    >
+      <span
+        className={`grid place-items-center size-4 border-2 shrink-0 ${selected ? "border-primary bg-primary" : "border-border"}`}
+      >
+        {selected && <Check className="size-3 text-primary-foreground" />}
+      </span>
+      <span className="text-xs font-bold uppercase tracking-wider">{label}</span>
+    </button>
   );
 }
 
