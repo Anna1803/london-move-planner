@@ -31,11 +31,15 @@ function describeAccess(
   label: string,
   parking: boolean,
   lift: boolean,
-  stairs: boolean,
-  flights: string | null,
+  floorLevel: string | null,
+  floorNumber: string | null,
 ): string {
   const parts = [parking ? "parking" : "no parking", lift ? "lift" : "no lift"];
-  if (stairs && flights) parts.push(`${flights} flight${flights === "1" ? "" : "s"} of stairs`);
+  if (floorLevel === "ground") {
+    parts.push("ground floor");
+  } else if (floorLevel === "upper" && floorNumber) {
+    parts.push(`floor ${floorNumber}`);
+  }
   return `${label}: ${parts.join(", ")}`;
 }
 
@@ -76,15 +80,15 @@ export async function syncQuoteToAirtable(row: QuoteRequestRow): Promise<void> {
       "From",
       row.moving_from_parking,
       row.moving_from_lift,
-      row.moving_from_stairs,
-      row.moving_from_stairs_flights,
+      row.moving_from_floor_level,
+      row.moving_from_floor_number,
     ),
     describeAccess(
       "To",
       row.moving_to_parking,
       row.moving_to_lift,
-      row.moving_to_stairs,
-      row.moving_to_stairs_flights,
+      row.moving_to_floor_level,
+      row.moving_to_floor_number,
     ),
   ].join("\n");
 

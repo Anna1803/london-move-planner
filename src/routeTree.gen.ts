@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as QuoteTypeRouteImport } from './routes/quote.$type'
+import { Route as ApiCheckQuoteDecisionsRouteImport } from './routes/api.check-quote-decisions'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -22,30 +23,39 @@ const QuoteTypeRoute = QuoteTypeRouteImport.update({
   path: '/quote/$type',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCheckQuoteDecisionsRoute = ApiCheckQuoteDecisionsRouteImport.update({
+  id: '/api/check-quote-decisions',
+  path: '/api/check-quote-decisions',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/api/check-quote-decisions': typeof ApiCheckQuoteDecisionsRoute
   '/quote/$type': typeof QuoteTypeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/api/check-quote-decisions': typeof ApiCheckQuoteDecisionsRoute
   '/quote/$type': typeof QuoteTypeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/api/check-quote-decisions': typeof ApiCheckQuoteDecisionsRoute
   '/quote/$type': typeof QuoteTypeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/quote/$type'
+  fullPaths: '/' | '/api/check-quote-decisions' | '/quote/$type'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/quote/$type'
-  id: '__root__' | '/' | '/quote/$type'
+  to: '/' | '/api/check-quote-decisions' | '/quote/$type'
+  id: '__root__' | '/' | '/api/check-quote-decisions' | '/quote/$type'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ApiCheckQuoteDecisionsRoute: typeof ApiCheckQuoteDecisionsRoute
   QuoteTypeRoute: typeof QuoteTypeRoute
 }
 
@@ -65,11 +75,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof QuoteTypeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/check-quote-decisions': {
+      id: '/api/check-quote-decisions'
+      path: '/api/check-quote-decisions'
+      fullPath: '/api/check-quote-decisions'
+      preLoaderRoute: typeof ApiCheckQuoteDecisionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ApiCheckQuoteDecisionsRoute: ApiCheckQuoteDecisionsRoute,
   QuoteTypeRoute: QuoteTypeRoute,
 }
 export const routeTree = rootRouteImport

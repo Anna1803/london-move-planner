@@ -1,5 +1,5 @@
 import { createFileRoute, Link, notFound, useParams } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
   Check,
@@ -7,6 +7,9 @@ import {
   Loader2,
   Calendar as CalendarIcon,
   Clock,
+  Zap,
+  ImagePlus,
+  X,
 } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,14 +30,52 @@ const streetRegex = /^[A-Za-zÀ-ÿ0-9.,' -]{2,200}$/;
 
 const FLIGHTS_OPTIONS = ["1", "2", "3", "4", "5", "6+"] as const;
 
-const FURNITURE_OPTIONS = [
+const RESIDENTIAL_FURNITURE_OPTIONS = [
   { value: "sofa", label: "Sofa" },
   { value: "armchair", label: "Armchair" },
-  { value: "chest_of_drawers", label: "Chest of drawers" },
   { value: "bed", label: "Bed" },
-  { value: "other_big_pieces", label: "Other big pieces (piano, marble table…)" },
+  { value: "wardrobe", label: "Wardrobe" },
+  { value: "chest_of_drawers", label: "Chest of drawers" },
+  { value: "dining_table", label: "Dining table" },
+  { value: "bookshelf", label: "Bookshelf" },
+  { value: "fridge_freezer", label: "Fridge / freezer" },
+  { value: "washing_machine", label: "Washing machine" },
+  { value: "other_big_pieces", label: "Other big pieces (piano, marble table, gym equipment…)" },
 ] as const;
-const FURNITURE_VALUES = FURNITURE_OPTIONS.map((o) => o.value) as [string, ...string[]];
+
+const OFFICE_FURNITURE_OPTIONS = [
+  { value: "desks", label: "Desks" },
+  { value: "office_chairs", label: "Office chairs" },
+  { value: "filing_cabinets", label: "Filing cabinets" },
+  { value: "it_equipment", label: "IT equipment" },
+  { value: "printers", label: "Printers" },
+  { value: "big_tables", label: "Big tables (meeting/conference)" },
+  { value: "shelving_units", label: "Shelving units" },
+  { value: "reception_seating", label: "Sofas / reception seating" },
+  { value: "server_racks", label: "Server racks" },
+  { value: "other_big_items", label: "Other big items (safes, whiteboards…)" },
+] as const;
+
+function getFurnitureOptions(propertyType: string) {
+  return propertyType === "office" ? OFFICE_FURNITURE_OPTIONS : RESIDENTIAL_FURNITURE_OPTIONS;
+}
+
+const FURNITURE_OTHER_COPY = {
+  residential: {
+    intro:
+      "Create a description of the main items — approximately how many boxes you'll need for books, kitchenware, bags of clothes, etc. (You have a free hand to describe this however you like.)",
+    placeholder:
+      "Help the boys better understand your property by typing what else is there to move",
+  },
+  office: {
+    intro: "Help the boys better understand the property.",
+    placeholder: "Help the boys better understand the property — what else is there to move?",
+  },
+};
+
+function getFurnitureOtherCopy(propertyType: string) {
+  return propertyType === "office" ? FURNITURE_OTHER_COPY.office : FURNITURE_OTHER_COPY.residential;
+}
 
 const BEDROOM_OPTIONS = [
   { value: "studio", label: "Studio" },
@@ -50,6 +91,9 @@ const OFFICE_AREA_OPTIONS = [
   { value: "1000_2500", label: "1,000–2,500 sq ft" },
   { value: "2500_plus", label: "2,500+ sq ft" },
 ] as const;
+
+const MAX_PHOTOS = 10;
+const MAX_PHOTO_SIZE_MB = 10;
 
 function generateId(): string {
   // crypto.randomUUID() only exists in secure contexts (HTTPS, or the
@@ -67,6 +111,10 @@ function generateId(): string {
 }
 
 function buildFormSchema(propertyType: string) {
+  const furnitureValues = getFurnitureOptions(propertyType).map((o) => o.value) as [
+    string,
+    ...string[],
+  ];
   return z
     .object({
       first_name: z
@@ -96,6 +144,10 @@ function buildFormSchema(propertyType: string) {
       from_lift: z.boolean(),
       from_stairs: z.boolean(),
       from_stairs_flights: z.enum(FLIGHTS_OPTIONS).optional(),
+      from_floor_level: z.enum(["ground", "upper"], {
+        errorMap: () => ({ message: "Select ground floor or upper level" }),
+      }),
+      from_floor_number: z.enum(FLIGHTS_OPTIONS).optional(),
 
       to_street: z.string().trim().regex(streetRegex, "Enter a valid street name"),
       to_number: z.string().trim().regex(numberRegex, "Enter a valid number"),
@@ -104,6 +156,10 @@ function buildFormSchema(propertyType: string) {
       to_lift: z.boolean(),
       to_stairs: z.boolean(),
       to_stairs_flights: z.enum(FLIGHTS_OPTIONS).optional(),
+      to_floor_level: z.enum(["ground", "upper"], {
+        errorMap: () => ({ message: "Select ground floor or upper level" }),
+      }),
+      to_floor_number: z.enum(FLIGHTS_OPTIONS).optional(),
 
       packaging_required: z.boolean(),
       unpacking_required: z.boolean(),
@@ -111,7 +167,7 @@ function buildFormSchema(propertyType: string) {
       handyman_services: z.boolean(),
       assembly_required: z.boolean(),
       fragile_items: z.boolean(),
-      furniture_items: z.array(z.enum(FURNITURE_VALUES)),
+      furniture_items: z.array(z.enum(furnitureValues)),
       furniture_other_description: z.string().trim().max(500).optional(),
 
       move_date: z.string().min(1, "Pick a date"),
@@ -131,6 +187,20 @@ function buildFormSchema(propertyType: string) {
           code: z.ZodIssueCode.custom,
           path: ["to_stairs_flights"],
           message: "How many flights of stairs at the drop-off address?",
+        });
+      }
+      if (data.from_floor_level === "upper" && !data.from_floor_number) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["from_floor_number"],
+          message: "Which floor is the pickup address on?",
+        });
+      }
+      if (data.to_floor_level === "upper" && !data.to_floor_number) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["to_floor_number"],
+          message: "Which floor is the drop-off address on?",
         });
       }
       if (
@@ -210,6 +280,8 @@ const TIME_OPTIONS = [
 function QuotePage() {
   const { type } = useParams({ from: "/quote/$type" });
   const meta = PROPERTY_LABELS[type];
+  const furnitureOptions = getFurnitureOptions(type);
+  const furnitureOtherCopy = getFurnitureOtherCopy(type);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -223,6 +295,8 @@ function QuotePage() {
   const [fromLift, setFromLift] = useState(false);
   const [fromStairs, setFromStairs] = useState(false);
   const [fromStairsFlights, setFromStairsFlights] = useState("");
+  const [fromFloorLevel, setFromFloorLevel] = useState("");
+  const [fromFloorNumber, setFromFloorNumber] = useState("");
 
   const [toStreet, setToStreet] = useState("");
   const [toNumber, setToNumber] = useState("");
@@ -231,6 +305,8 @@ function QuotePage() {
   const [toLift, setToLift] = useState(false);
   const [toStairs, setToStairs] = useState(false);
   const [toStairsFlights, setToStairsFlights] = useState("");
+  const [toFloorLevel, setToFloorLevel] = useState("");
+  const [toFloorNumber, setToFloorNumber] = useState("");
 
   const [packaging, setPackaging] = useState(false);
   const [unpacking, setUnpacking] = useState(false);
@@ -250,6 +326,56 @@ function QuotePage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  const [photos, setPhotos] = useState<{ file: File; url: string }[]>([]);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+
+  useEffect(() => {
+    return () => {
+      photos.forEach((p) => URL.revokeObjectURL(p.url));
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function addPhotos(files: FileList | File[]) {
+    setPhotoError(null);
+    const incoming = Array.from(files);
+    const accepted: { file: File; url: string }[] = [];
+    let rejected = false;
+
+    for (const file of incoming) {
+      if (!file.type.startsWith("image/")) {
+        rejected = true;
+        continue;
+      }
+      if (file.size > MAX_PHOTO_SIZE_MB * 1024 * 1024) {
+        rejected = true;
+        continue;
+      }
+      accepted.push({ file, url: URL.createObjectURL(file) });
+    }
+
+    setPhotos((prev) => {
+      const combined = [...prev, ...accepted];
+      if (combined.length > MAX_PHOTOS) {
+        combined.slice(MAX_PHOTOS).forEach((p) => URL.revokeObjectURL(p.url));
+        setPhotoError(`Only up to ${MAX_PHOTOS} photos — the rest weren't added.`);
+        return combined.slice(0, MAX_PHOTOS);
+      }
+      if (rejected) {
+        setPhotoError(`Some files were skipped — images only, up to ${MAX_PHOTO_SIZE_MB}MB each.`);
+      }
+      return combined;
+    });
+  }
+
+  function removePhoto(index: number) {
+    setPhotos((prev) => {
+      const target = prev[index];
+      if (target) URL.revokeObjectURL(target.url);
+      return prev.filter((_, i) => i !== index);
+    });
+  }
 
   function toggleFurniture(value: string) {
     setFurniture((prev) =>
@@ -275,6 +401,8 @@ function QuotePage() {
       from_lift: fromLift,
       from_stairs: fromStairs,
       from_stairs_flights: fromStairs ? fromStairsFlights || undefined : undefined,
+      from_floor_level: fromFloorLevel || undefined,
+      from_floor_number: fromFloorLevel === "upper" ? fromFloorNumber || undefined : undefined,
       to_street: toStreet,
       to_number: toNumber,
       to_postcode: toPostcode,
@@ -282,6 +410,8 @@ function QuotePage() {
       to_lift: toLift,
       to_stairs: toStairs,
       to_stairs_flights: toStairs ? toStairsFlights || undefined : undefined,
+      to_floor_level: toFloorLevel || undefined,
+      to_floor_number: toFloorLevel === "upper" ? toFloorNumber || undefined : undefined,
       packaging_required: packaging,
       unpacking_required: unpacking,
       end_of_tenancy_cleaning: cleaning,
@@ -324,6 +454,9 @@ function QuotePage() {
       moving_from_lift: d.from_lift,
       moving_from_stairs: d.from_stairs,
       moving_from_stairs_flights: d.from_stairs ? d.from_stairs_flights : null,
+      moving_from_floor_level: d.from_floor_level,
+      moving_from_floor_number:
+        d.from_floor_level === "upper" ? (d.from_floor_number ?? null) : null,
       moving_to_street: d.to_street,
       moving_to_number: d.to_number,
       moving_to_postcode: d.to_postcode,
@@ -331,6 +464,8 @@ function QuotePage() {
       moving_to_lift: d.to_lift,
       moving_to_stairs: d.to_stairs,
       moving_to_stairs_flights: d.to_stairs ? d.to_stairs_flights : null,
+      moving_to_floor_level: d.to_floor_level,
+      moving_to_floor_number: d.to_floor_level === "upper" ? (d.to_floor_number ?? null) : null,
       packaging_required: d.packaging_required,
       unpacking_required: d.unpacking_required,
       end_of_tenancy_cleaning: d.end_of_tenancy_cleaning,
@@ -362,19 +497,49 @@ function QuotePage() {
         bedrooms: d.bedrooms ?? null,
         officeAreaBand: d.office_area_band ?? null,
         fromLift: d.from_lift,
-        fromStairs: d.from_stairs,
-        fromStairsFlights: d.from_stairs ? (d.from_stairs_flights ?? null) : null,
+        fromFloorLevel: d.from_floor_level,
+        fromFloorNumber: d.from_floor_level === "upper" ? (d.from_floor_number ?? null) : null,
+        fromParking: d.from_parking,
         toLift: d.to_lift,
-        toStairs: d.to_stairs,
-        toStairsFlights: d.to_stairs ? (d.to_stairs_flights ?? null) : null,
+        toFloorLevel: d.to_floor_level,
+        toFloorNumber: d.to_floor_level === "upper" ? (d.to_floor_number ?? null) : null,
+        toParking: d.to_parking,
         packagingRequired: d.packaging_required,
         unpackingRequired: d.unpacking_required,
         endOfTenancyCleaning: d.end_of_tenancy_cleaning,
         handymanServices: d.handyman_services,
         assemblyRequired: d.assembly_required,
+        fragileItems: d.fragile_items,
+        furnitureItemCount: d.furniture_items.length,
+        furnitureDescribedInNotes: d.furniture_items.length < 3,
         moveDate: d.move_date,
       },
     }).catch((err) => console.error("Failed to calculate quote price:", err));
+
+    if (photos.length > 0) {
+      Promise.all(
+        photos.map(async ({ file }) => {
+          const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+          const path = `${quoteRequestId}/${generateId()}.${ext}`;
+          const { error: uploadError } = await supabase.storage
+            .from("quote-photos")
+            .upload(path, file, { contentType: file.type });
+          if (uploadError) {
+            console.error("Photo upload failed:", uploadError);
+            return;
+          }
+          const { error: photoRowError } = await supabase.from("quote_photos").insert({
+            quote_request_id: quoteRequestId,
+            storage_path: path,
+            file_name: file.name,
+            file_size: file.size,
+          });
+          if (photoRowError) {
+            console.error("Failed to record uploaded photo:", photoRowError);
+          }
+        }),
+      ).catch((err) => console.error("Failed to upload photos:", err));
+    }
   }
 
   return (
@@ -582,6 +747,41 @@ function QuotePage() {
                     </Field>
                   </div>
                 )}
+                <div className="mt-3">
+                  <Field label="Floor">
+                    <div className="grid grid-cols-2 gap-3">
+                      <FloorLevelButton
+                        selected={fromFloorLevel === "ground"}
+                        onClick={() => setFromFloorLevel("ground")}
+                        label="Ground floor"
+                      />
+                      <FloorLevelButton
+                        selected={fromFloorLevel === "upper"}
+                        onClick={() => setFromFloorLevel("upper")}
+                        label="Upper level"
+                      />
+                    </div>
+                  </Field>
+                  {fromFloorLevel === "upper" && (
+                    <div className="mt-3 max-w-[220px]">
+                      <Field label="Which floor?">
+                        <select
+                          required
+                          value={fromFloorNumber}
+                          onChange={(e) => setFromFloorNumber(e.target.value)}
+                          className="qinput qselect"
+                        >
+                          <option value="">Select…</option>
+                          {FLIGHTS_OPTIONS.map((f) => (
+                            <option key={f} value={f}>
+                              {f}
+                            </option>
+                          ))}
+                        </select>
+                      </Field>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div>
@@ -643,6 +843,41 @@ function QuotePage() {
                     </Field>
                   </div>
                 )}
+                <div className="mt-3">
+                  <Field label="Floor">
+                    <div className="grid grid-cols-2 gap-3">
+                      <FloorLevelButton
+                        selected={toFloorLevel === "ground"}
+                        onClick={() => setToFloorLevel("ground")}
+                        label="Ground floor"
+                      />
+                      <FloorLevelButton
+                        selected={toFloorLevel === "upper"}
+                        onClick={() => setToFloorLevel("upper")}
+                        label="Upper level"
+                      />
+                    </div>
+                  </Field>
+                  {toFloorLevel === "upper" && (
+                    <div className="mt-3 max-w-[220px]">
+                      <Field label="Which floor?">
+                        <select
+                          required
+                          value={toFloorNumber}
+                          onChange={(e) => setToFloorNumber(e.target.value)}
+                          className="qinput qselect"
+                        >
+                          <option value="">Select…</option>
+                          {FLIGHTS_OPTIONS.map((f) => (
+                            <option key={f} value={f}>
+                              {f}
+                            </option>
+                          ))}
+                        </select>
+                      </Field>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="pt-2">
@@ -687,7 +922,7 @@ function QuotePage() {
                   Select at least 3 big items — or tell us what you're moving below.
                 </p>
                 <div className="grid sm:grid-cols-2 gap-3">
-                  {FURNITURE_OPTIONS.map((opt) => (
+                  {furnitureOptions.map((opt) => (
                     <FurnitureToggle
                       key={opt.value}
                       selected={furniture.includes(opt.value)}
@@ -696,21 +931,26 @@ function QuotePage() {
                     />
                   ))}
                 </div>
-                {furniture.length < 3 && (
-                  <div className="mt-3">
-                    <Field label="What's there to be moved?">
-                      <textarea
-                        required
-                        rows={3}
-                        maxLength={500}
-                        value={furnitureOtherDescription}
-                        onChange={(e) => setFurnitureOtherDescription(e.target.value)}
-                        placeholder="In case there aren't 3 big items — e.g. 1 sofa, 1 bed, or just a few bags of books/clothes"
-                        className="qinput resize-none"
-                      />
-                    </Field>
-                  </div>
-                )}
+                <div className="mt-3">
+                  <p className="text-xs text-muted-foreground mb-2">{furnitureOtherCopy.intro}</p>
+                  <Field
+                    label={
+                      furniture.length < 3
+                        ? "What's there to be moved?"
+                        : "Anything else to add? (optional)"
+                    }
+                  >
+                    <textarea
+                      required={furniture.length < 3}
+                      rows={3}
+                      maxLength={500}
+                      value={furnitureOtherDescription}
+                      onChange={(e) => setFurnitureOtherDescription(e.target.value)}
+                      placeholder={furnitureOtherCopy.placeholder}
+                      className="qinput resize-none"
+                    />
+                  </Field>
+                </div>
                 <div className="mt-3">
                   <BoolToggle
                     checked={fragileItems}
@@ -745,7 +985,7 @@ function QuotePage() {
                     checked={handyman}
                     onChange={setHandyman}
                     title="Handyman services"
-                    description="Furniture assembly, mounting, small repairs at the new place."
+                    description="Painting the walls, mounting, small repairs at the new place."
                   />
                   <AddonCheckbox
                     checked={assembly}
@@ -754,6 +994,31 @@ function QuotePage() {
                     description="Flat-pack beds, wardrobes and tables taken apart and rebuilt for you."
                   />
                 </div>
+              </div>
+
+              <div>
+                <SectionHeader>Property photos (optional)</SectionHeader>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Got something worth knowing about the property? A few photos help us picture the
+                  job properly — tight staircases, narrow doorways, that spare room stacked with
+                  boxes, anything easier to show than explain.
+                </p>
+                <p className="text-sm text-muted-foreground leading-relaxed mt-2">
+                  <strong className="text-foreground font-bold">
+                    Photos help The Boys build a far more accurate price quote than a text
+                    description alone.
+                  </strong>{" "}
+                  We might also ask for a couple more pictures, or offer a quick free video call,
+                  before sending your final price — it only helps us get your number right the first
+                  time. Win-win.
+                </p>
+
+                <PhotoDropzone photos={photos} onAdd={addPhotos} onRemove={removePhoto} />
+                {photoError && (
+                  <p className="mt-2 text-[11px] font-mono uppercase tracking-widest text-destructive">
+                    {photoError}
+                  </p>
+                )}
               </div>
 
               <Field label="Anything else? (optional)">
@@ -863,7 +1128,7 @@ function SectionHeader({
     <div
       className={`mb-3 font-display text-lg uppercase tracking-wide ${color} flex items-center gap-2`}
     >
-      <span className="inline-block w-6 h-[3px] bg-current" />
+      <Zap className="size-4 shrink-0" fill="currentColor" />
       {children}
     </div>
   );
@@ -901,6 +1166,97 @@ function BoolToggle({
       >
         {checked ? "Yes" : "No"}
       </span>
+    </button>
+  );
+}
+
+function PhotoDropzone({
+  photos,
+  onAdd,
+  onRemove,
+}: {
+  photos: { file: File; url: string }[];
+  onAdd: (files: FileList | File[]) => void;
+  onRemove: (index: number) => void;
+}) {
+  const [dragActive, setDragActive] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  return (
+    <div className="mt-3">
+      <div
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragActive(true);
+        }}
+        onDragLeave={() => setDragActive(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragActive(false);
+          if (e.dataTransfer.files?.length) onAdd(e.dataTransfer.files);
+        }}
+        onClick={() => inputRef.current?.click()}
+        role="button"
+        tabIndex={0}
+        className={`cursor-pointer border-2 border-dashed p-6 text-center transition-all ${dragActive ? "border-primary bg-primary/10" : "border-border bg-background/40 hover:border-accent/60"}`}
+      >
+        <ImagePlus className="mx-auto mb-2 size-6 text-accent" />
+        <p className="text-xs font-bold uppercase tracking-wider">Drag & drop photos here</p>
+        <p className="text-[11px] text-muted-foreground mt-1">
+          or click to browse — images only, up to {MAX_PHOTOS} photos
+        </p>
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          onChange={(e) => {
+            if (e.target.files?.length) onAdd(e.target.files);
+            e.target.value = "";
+          }}
+        />
+      </div>
+      {photos.length > 0 && (
+        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mt-3">
+          {photos.map((p, i) => (
+            <div
+              key={p.url}
+              className="relative aspect-square border-2 border-border overflow-hidden"
+            >
+              <img src={p.url} alt="" className="w-full h-full object-cover" />
+              <button
+                type="button"
+                onClick={() => onRemove(i)}
+                aria-label="Remove photo"
+                className="absolute top-1 right-1 grid place-items-center size-5 bg-destructive text-destructive-foreground cursor-pointer"
+              >
+                <X className="size-3" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FloorLevelButton({
+  selected,
+  onClick,
+  label,
+}: {
+  selected: boolean;
+  onClick: () => void;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`px-3 py-2.5 border-2 text-xs font-bold uppercase tracking-wider text-center transition-all cursor-pointer ${selected ? "border-primary bg-primary/10 text-primary" : "border-border bg-background/40 text-foreground hover:border-accent/60"}`}
+    >
+      {label}
     </button>
   );
 }

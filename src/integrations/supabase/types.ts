@@ -26,6 +26,8 @@ export type Database = {
           last_name: string;
           move_date: string;
           moving_from_address: string;
+          moving_from_floor_level: string | null;
+          moving_from_floor_number: string | null;
           moving_from_lift: boolean;
           moving_from_number: string | null;
           moving_from_parking: boolean;
@@ -34,6 +36,8 @@ export type Database = {
           moving_from_stairs_flights: string | null;
           moving_from_street: string | null;
           moving_to_address: string;
+          moving_to_floor_level: string | null;
+          moving_to_floor_number: string | null;
           moving_to_lift: boolean;
           moving_to_number: string | null;
           moving_to_parking: boolean;
@@ -69,6 +73,8 @@ export type Database = {
           last_name: string;
           move_date: string;
           moving_from_address: string;
+          moving_from_floor_level?: string | null;
+          moving_from_floor_number?: string | null;
           moving_from_lift?: boolean;
           moving_from_number?: string | null;
           moving_from_parking?: boolean;
@@ -77,6 +83,8 @@ export type Database = {
           moving_from_stairs_flights?: string | null;
           moving_from_street?: string | null;
           moving_to_address: string;
+          moving_to_floor_level?: string | null;
+          moving_to_floor_number?: string | null;
           moving_to_lift?: boolean;
           moving_to_number?: string | null;
           moving_to_parking?: boolean;
@@ -112,6 +120,8 @@ export type Database = {
           last_name?: string;
           move_date?: string;
           moving_from_address?: string;
+          moving_from_floor_level?: string | null;
+          moving_from_floor_number?: string | null;
           moving_from_lift?: boolean;
           moving_from_number?: string | null;
           moving_from_parking?: boolean;
@@ -120,6 +130,8 @@ export type Database = {
           moving_from_stairs_flights?: string | null;
           moving_from_street?: string | null;
           moving_to_address?: string;
+          moving_to_floor_level?: string | null;
+          moving_to_floor_number?: string | null;
           moving_to_lift?: boolean;
           moving_to_number?: string | null;
           moving_to_parking?: boolean;
@@ -139,6 +151,41 @@ export type Database = {
           unpacking_required?: boolean;
         };
         Relationships: [];
+      };
+      quote_photos: {
+        Row: {
+          created_at: string;
+          file_name: string | null;
+          file_size: number | null;
+          id: string;
+          quote_request_id: string;
+          storage_path: string;
+        };
+        Insert: {
+          created_at?: string;
+          file_name?: string | null;
+          file_size?: number | null;
+          id?: string;
+          quote_request_id: string;
+          storage_path: string;
+        };
+        Update: {
+          created_at?: string;
+          file_name?: string | null;
+          file_size?: number | null;
+          id?: string;
+          quote_request_id?: string;
+          storage_path?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "quote_photos_quote_request_id_fkey";
+            columns: ["quote_request_id"];
+            isOneToOne: false;
+            referencedRelation: "quote_requests";
+            referencedColumns: ["id"];
+          },
+        ];
       };
     };
     Views: {
