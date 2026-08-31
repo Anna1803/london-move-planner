@@ -51,6 +51,21 @@ const OFFICE_AREA_OPTIONS = [
   { value: "2500_plus", label: "2,500+ sq ft" },
 ] as const;
 
+function generateId(): string {
+  // crypto.randomUUID() only exists in secure contexts (HTTPS, or the
+  // localhost exemption) - it's undefined on a plain http:// LAN address.
+  // This id is just a unique row key, not a secret, so a Math.random()
+  // fallback in the same UUID v4 shape is fine.
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
 function buildFormSchema(propertyType: string) {
   return z
     .object({
@@ -288,7 +303,7 @@ function QuotePage() {
     const d = parsed.data;
     const fromCombined = `${d.from_number} ${d.from_street}, ${d.from_postcode}`;
     const toCombined = `${d.to_number} ${d.to_street}, ${d.to_postcode}`;
-    const quoteRequestId = crypto.randomUUID();
+    const quoteRequestId = generateId();
 
     setSubmitting(true);
     const { error: insertError } = await supabase.from("quote_requests").insert({
