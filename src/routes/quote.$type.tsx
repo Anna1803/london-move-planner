@@ -463,7 +463,7 @@ function QuotePage() {
                     maxLength={30}
                     value={phone}
                     onChange={(e) => setPhone(e.target.value.replace(/[^+0-9 ()-]/g, ""))}
-                    pattern="[+0-9 ()-]{5,30}"
+                    pattern="[+0-9 \(\)\-]{5,30}"
                     title="Digits, spaces, +, (), - only"
                     placeholder="+44 7700 900000"
                     className="qinput"
