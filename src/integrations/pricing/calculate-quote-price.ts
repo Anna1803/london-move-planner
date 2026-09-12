@@ -3,7 +3,7 @@ import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { calculatePricing } from "@/lib/pricing";
 import { syncQuoteToAirtable } from "@/integrations/airtable/sync-quote";
-import { sendAdminNotificationEmail } from "@/integrations/resend/send-admin-notification-email";
+import { sendAdminNotificationEmail } from "@/integrations/postmark/send-admin-notification-email";
 import type { Json } from "@/integrations/supabase/types";
 
 const floorNumberSchema = z.enum(["1", "2", "3", "4", "5", "6+"]).nullable();

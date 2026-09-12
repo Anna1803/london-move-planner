@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { getResendClient } from "./client.server";
+import { sendPostmarkEmail } from "./client.server";
 
 const thankYouEmailInput = z.object({
   firstName: z.string().min(1).max(100),
@@ -17,18 +17,17 @@ const PROPERTY_LABELS: Record<string, string> = {
 export const sendThankYouEmail = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => thankYouEmailInput.parse(data))
   .handler(async ({ data }) => {
-    const fromAddress = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
     const label = PROPERTY_LABELS[data.propertyType];
 
-    const { error } = await getResendClient().emails.send({
-      from: `The Boys <${fromAddress}>`,
+    const { error } = await sendPostmarkEmail({
       to: data.email,
-      subject: "We've got your quote request",
-      html: `
+      subject: "Got it — The Boys are on the case",
+      htmlBody: `
         <p>Hi ${data.firstName},</p>
-        <p>Thanks for requesting a ${label} quote with The Boys. We've received your details
-        and one of the crew will be in touch shortly with your tailored quote.</p>
-        <p>&mdash; The Boys</p>
+        <p>Got it — your ${label} details just landed with the crew, and we're already on the case.</p>
+        <p>No capes required on your end. We'll crunch the numbers properly and get back to you
+        shortly with a price that actually makes sense.</p>
+        <p>Hang tight,<br>The Boys</p>
       `,
     });
 

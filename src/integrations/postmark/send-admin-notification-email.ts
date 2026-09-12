@@ -1,4 +1,4 @@
-import { getResendClient } from "./client.server";
+import { sendPostmarkEmail } from "./client.server";
 
 const PROPERTY_LABELS: Record<string, string> = {
   house: "House",
@@ -20,7 +20,6 @@ export interface AdminNotificationInput {
 // invokes this.
 export async function sendAdminNotificationEmail(input: AdminNotificationInput): Promise<void> {
   const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL;
-  const fromAddress = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
 
   if (!adminEmail) {
     console.error("Admin notification skipped: missing ADMIN_NOTIFICATION_EMAIL in .env");
@@ -30,11 +29,10 @@ export async function sendAdminNotificationEmail(input: AdminNotificationInput):
   const priceLine = input.calculatedTotal != null ? `£${input.calculatedTotal}` : "not calculated";
   const reviewLine = input.needsManualReview ? " (flagged for manual review)" : "";
 
-  const { error } = await getResendClient().emails.send({
-    from: `The Boys <${fromAddress}>`,
+  const { error } = await sendPostmarkEmail({
     to: adminEmail,
     subject: `New quote ready: ${input.firstName} ${input.lastName} — ${priceLine}`,
-    html: `
+    htmlBody: `
       <p>A new quote request has been priced and is sitting in Airtable, ready for review.</p>
       <ul>
         <li><strong>Client:</strong> ${input.firstName} ${input.lastName}</li>

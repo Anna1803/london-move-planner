@@ -6,7 +6,7 @@ import {
 import {
   sendAcceptedQuoteEmail,
   sendRejectedQuoteEmail,
-} from "@/integrations/resend/send-quote-decision-email";
+} from "@/integrations/postmark/send-quote-decision-email";
 
 function isAuthorized(request: Request): boolean {
   const secret = process.env.CRON_SECRET;

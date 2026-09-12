@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { sendThankYouEmail } from "@/integrations/resend/send-thank-you-email";
+import { sendThankYouEmail } from "@/integrations/postmark/send-thank-you-email";
 import { calculateQuotePrice } from "@/integrations/pricing/calculate-quote-price";
 
 const PROPERTY_LABELS: Record<string, { title: string; tagline: string }> = {

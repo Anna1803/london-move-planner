@@ -17,8 +17,8 @@ export function Footer() {
             Reach us
           </div>
           <ul className="space-y-2 text-sm">
-            <li>hello@theboys.london</li>
-            <li>020 0000 0000</li>
+            <li>enquiries@theboysremovals.co.uk</li>
+            <li>+44 20 3400 9905</li>
             <li>7/7 · 06:00–22:00</li>
           </ul>
         </div>
