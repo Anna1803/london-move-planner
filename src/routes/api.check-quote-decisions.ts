@@ -7,6 +7,7 @@ import {
   sendAcceptedQuoteEmail,
   sendRejectedQuoteEmail,
 } from "@/integrations/brevo/send-quote-decision-email";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 function isAuthorized(request: Request): boolean {
   const secret = process.env.CRON_SECRET;
@@ -34,10 +35,17 @@ async function handleCheck(request: Request): Promise<Response> {
       calculatedTotal: decision.calculatedTotal,
     };
 
-    const sent =
-      decision.status === "Accepted"
-        ? await sendAcceptedQuoteEmail(emailInput)
-        : await sendRejectedQuoteEmail(emailInput);
+    let sent: boolean;
+    if (decision.status === "Accepted") {
+      const { data: details } = await supabaseAdmin
+        .from("quote_requests")
+        .select("*")
+        .eq("id", decision.quoteId)
+        .maybeSingle();
+      sent = await sendAcceptedQuoteEmail({ ...emailInput, details });
+    } else {
+      sent = await sendRejectedQuoteEmail(emailInput);
+    }
 
     if (sent) {
       await markDecisionProcessed(decision.airtableRecordId);
