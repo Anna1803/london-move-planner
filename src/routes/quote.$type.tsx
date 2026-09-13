@@ -1054,7 +1054,13 @@ function QuotePage() {
 
               <p className="inline-flex items-start gap-2 text-[10px] text-muted-foreground leading-relaxed">
                 <ShieldCheck className="size-3.5 shrink-0 mt-0.5 text-accent" />
-                <span>Your details stay private and are only used to send you a quote.</span>
+                <span>
+                  Your details stay private and are only used to send you a quote. See our{" "}
+                  <Link to="/privacy-policy" className="text-accent underline">
+                    privacy policy
+                  </Link>
+                  .
+                </span>
               </p>
             </form>
           </>

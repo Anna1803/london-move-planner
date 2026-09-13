@@ -1,3 +1,5 @@
+import { Link } from "@tanstack/react-router";
+
 export function Footer() {
   return (
     <footer className="border-t border-border bg-card/30">
@@ -52,7 +54,12 @@ export function Footer() {
       <div className="border-t border-border">
         <div className="max-w-7xl mx-auto px-5 md:px-8 py-5 flex flex-col sm:flex-row justify-between items-center gap-3 text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
           <div>© {new Date().getFullYear()} The Boys Ltd</div>
-          <div>Built in London · TLS-encrypted</div>
+          <div className="flex items-center gap-4">
+            <Link to="/privacy-policy" className="hover:text-foreground transition-colors">
+              Privacy policy
+            </Link>
+            <span>Built in London · TLS-encrypted</span>
+          </div>
         </div>
       </div>
     </footer>

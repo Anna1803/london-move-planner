@@ -8,8 +8,8 @@ const points = [
   },
   {
     icon: Lock,
-    title: "Only us see it",
-    body: "Your details land straight in our private inbox. No shared spreadsheets, no random staff scrolling through, no third parties peeking.",
+    title: "Handled by us, not sold",
+    body: "Your details go to our own booking system and a handful of trusted tools that keep the business running. Never sold, never shared with advertisers.",
   },
   {
     icon: Eye,
