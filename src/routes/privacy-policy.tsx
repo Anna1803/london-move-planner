@@ -53,8 +53,9 @@ function PrivacyPolicyPage() {
 
         <Section title="Who we are">
           <p>
-            The Boys ("we", "us") is a London removals, cleaning, and handyman business. We're the
-            data controller for the personal information described here. You can reach us at{" "}
+            The Boys Ltd ("we", "us"), company number 17217932, is a London removals, cleaning, and
+            handyman company. We're the data controller for the personal information described here.
+            You can reach us at{" "}
             <a href="mailto:enquiries@theboysremovals.co.uk" className="text-primary underline">
               enquiries@theboysremovals.co.uk
             </a>{" "}
