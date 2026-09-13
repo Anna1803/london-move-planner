@@ -97,9 +97,7 @@ needs to be clicked or configured.
 
 A polling endpoint (`/api/check-quote-decisions`) periodically asks
 Airtable: "any rows marked Accepted or Rejected that I haven't handled
-yet?" For each one it finds — but only once the status has held steady for
-a **15-minute grace period** (so an accidental click can be undone by
-flipping it back) — it:
+yet?" For each one it finds, it:
 
 - Sends the client their final quote email (with whatever price is
   currently on the row, in case the owner edited it), or a polite decline
@@ -108,7 +106,10 @@ flipping it back) — it:
 This design deliberately avoids Airtable's automation features (sending a
 webhook or running a script from within Airtable requires a paid plan) —
 instead, the app reaches out to Airtable on its own schedule, which works
-identically on the free tier.
+identically on the free tier. There's no artificial delay built in — the
+email goes out the next time the endpoint is called, so how "instant" this
+feels is purely down to how often it's scheduled (e.g. every 1 minute for
+a near-instant feel).
 
 **Note:** this endpoint needs something to actually call it every few
 minutes once the site is deployed (a free service like cron-job.org or a

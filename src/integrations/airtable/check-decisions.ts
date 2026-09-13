@@ -24,11 +24,8 @@ function airtableConfig() {
   return { apiKey, baseId, tableName };
 }
 
-// Rows are only picked up once they've sat in Accepted/Rejected for at least
-// this long, unprocessed — a grace period so an accidental status flip can be
-// undone before any customer-facing email fires. Requires two fields on the
-// Airtable table: "Processed" (checkbox) and "Status Last Modified" (a "Last
-// modified time" field scoped to just the Status field).
+// Picks up any row marked Accepted/Rejected that hasn't been emailed yet.
+// Requires a "Processed" checkbox field on the Airtable table.
 export async function fetchPendingDecisions(): Promise<PendingDecision[]> {
   const config = airtableConfig();
   if (!config) {
@@ -38,8 +35,7 @@ export async function fetchPendingDecisions(): Promise<PendingDecision[]> {
     return [];
   }
 
-  const graceMinutes = Number(process.env.DECISION_GRACE_PERIOD_MINUTES ?? "15");
-  const formula = `AND(OR({Status}='Accepted',{Status}='Rejected'),NOT({Processed}),DATETIME_DIFF(NOW(),{Status Last Modified},'minutes')>=${graceMinutes})`;
+  const formula = `AND(OR({Status}='Accepted',{Status}='Rejected'),NOT({Processed}))`;
 
   const url = `https://api.airtable.com/v0/${config.baseId}/${encodeURIComponent(config.tableName)}?filterByFormula=${encodeURIComponent(formula)}`;
   const res = await fetch(url, { headers: { Authorization: `Bearer ${config.apiKey}` } });
