@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { sendThankYouEmail } from "@/integrations/postmark/send-thank-you-email";
+import { sendThankYouEmail } from "@/integrations/brevo/send-thank-you-email";
 import { calculateQuotePrice } from "@/integrations/pricing/calculate-quote-price";
 
 const PROPERTY_LABELS: Record<string, { title: string; tagline: string }> = {
@@ -748,7 +748,7 @@ function QuotePage() {
                   </div>
                 )}
                 <div className="mt-3">
-                  <Field label="Floor">
+                  <FieldGroup label="Floor">
                     <div className="grid grid-cols-2 gap-3">
                       <FloorLevelButton
                         selected={fromFloorLevel === "ground"}
@@ -761,7 +761,7 @@ function QuotePage() {
                         label="Upper level"
                       />
                     </div>
-                  </Field>
+                  </FieldGroup>
                   {fromFloorLevel === "upper" && (
                     <div className="mt-3 max-w-[220px]">
                       <Field label="Which floor?">
@@ -844,7 +844,7 @@ function QuotePage() {
                   </div>
                 )}
                 <div className="mt-3">
-                  <Field label="Floor">
+                  <FieldGroup label="Floor">
                     <div className="grid grid-cols-2 gap-3">
                       <FloorLevelButton
                         selected={toFloorLevel === "ground"}
@@ -857,7 +857,7 @@ function QuotePage() {
                         label="Upper level"
                       />
                     </div>
-                  </Field>
+                  </FieldGroup>
                   {toFloorLevel === "upper" && (
                     <div className="mt-3 max-w-[220px]">
                       <Field label="Which floor?">
@@ -1142,6 +1142,21 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       </span>
       {children}
     </label>
+  );
+}
+
+// Like Field, but for wrapping a group of buttons rather than a single form
+// control. A <label> wrapping multiple interactive elements corrupts each
+// child's computed accessible name (browsers blend the label text with a
+// sibling's text), so this uses a labeled group instead.
+function FieldGroup({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div role="group" aria-label={label}>
+      <span className="block text-[10px] font-mono uppercase tracking-[0.25em] text-accent mb-1.5">
+        {label}
+      </span>
+      {children}
+    </div>
   );
 }
 

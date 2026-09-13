@@ -16,7 +16,8 @@ see [PRICING.md](PRICING.md).
 | **TanStack Start** (React + Vite) | The site itself — pages, the quote form, server-side logic                                                                                                    |
 | **Supabase**                      | Database (`quote_requests`, `quote_photos`) and private file storage for property photos                                                                      |
 | **Airtable**                      | Where the business owner reviews priced quotes — calendar view for spotting date overlaps, sortable by price, Accept/Reject workflow                          |
-| **Resend**                        | Sends the three transactional emails (thank-you, admin notification, final quote/decline) — a temporary provider, see [Known limitations](#known-limitations) |
+| **Brevo**                         | Sends the three transactional emails (thank-you, admin notification, final quote/decline) from `enquiries@theboysremovals.co.uk`. A Postmark integration also exists in the codebase (`src/integrations/postmark/`) but is currently unused — kept as a ready fallback since Brevo and Postmark share the exact same interface, so switching providers is a 3-line import change |
+| **Google Workspace**              | The real business mailbox (`enquiries@theboysremovals.co.uk`) — where humans reply to customers; separate from Brevo, which only sends automated mail          |
 
 Nothing here needs a login system — the site is public, and the "admin" side
 of things happens in Airtable and email, not a custom dashboard.
@@ -123,7 +124,7 @@ npm run dev       # http://localhost:8080
 ```
 
 You'll need a `.env` file (see `.env.example` for the full list) with your
-own Supabase project, Resend account, and Airtable base credentials. None
+own Supabase project, Brevo account, and Airtable base credentials. None
 of the required third-party accounts cost anything at the scale this app
 currently runs at.
 
@@ -131,9 +132,30 @@ Other useful commands:
 
 ```bash
 npm run build      # production build
-npm run preview    # serve that build locally
+npm start          # run that build as a plain Node server (see Deployment below)
+npm run preview    # serve the build locally via Vite's preview server
 npm run lint        # eslint
 npm run format      # prettier
+```
+
+### Deployment
+
+`npm run build` produces a Web-standard `fetch` handler (`dist/server/server.js`)
+rather than a ready-to-run Node server — that's intentional, since TanStack
+Start leaves wiring it up to whatever platform you deploy to. `server.entry.mjs`
+at the repo root does that wiring for a plain Node host (Railway, Render,
+etc.): it uses `h3-v2`'s `serve()` to listen on `process.env.PORT`, and — this
+part matters — it also serves the built static files from `dist/client/assets`
+itself, since nothing else does that for you on a bare Node host. Without that
+static-file layer the page loads as an empty, non-interactive shell (this was
+caught and fixed by testing the built app in a real browser, not just checking
+HTTP status codes on routes).
+
+To run the production build locally exactly as a host would:
+
+```bash
+npm run build
+npm start          # http://localhost:3000 by default, or $PORT
 ```
 
 ### Database migrations
@@ -147,21 +169,21 @@ in filename order, the first time you set up a new project.
 
 Things that are deliberately incomplete right now, not oversights:
 
-- **Resend is temporary.** Its sandbox mode only delivers to the account's
-  own verified email address — real customers won't receive anything until
-  a professional domain is set up and the project switches to a proper
-  transactional email provider. Postmark is the recommended pick: it's
-  built specifically for transactional (not marketing) email, which tends
-  to mean better inbox placement, and it offers EU-region data hosting,
-  which simplifies the international-transfer story once a privacy policy
-  is in place.
+- **Email deliverability is still warming up.** `theboysremovals.co.uk` is a
+  brand-new sending domain — SPF, DKIM, and DMARC are all correctly
+  configured and verified (via Google Postmaster Tools and per-message
+  "Show original" checks), but new domains still land in spam intermittently
+  for the first weeks with some providers (Yahoo especially) simply because
+  they have no sending history yet. This resolves on its own with time and
+  consistent legitimate sending; there's nothing further to configure.
 - **Photos aren't synced to Airtable.** They're securely stored in Supabase
   and can be viewed there (by quote ID), but don't yet show up as
   attachments alongside the rest of a quote's details in Airtable.
-- **No live deployment yet.** The app runs locally; deploying it (Railway
-  and Render are good fits, since the build already targets plain Node)
-  is a separate, not-yet-done step — and it's the prerequisite for wiring
-  up the decision-polling endpoint's schedule.
+- **No live deployment yet.** The app runs locally; `server.entry.mjs` and
+  `npm start` make it deployable to a plain Node host (Railway and Render
+  are good fits), but actually deploying it is a separate, not-yet-done
+  step — and it's the prerequisite for wiring up the decision-polling
+  endpoint's schedule.
 - **No privacy policy or data retention automation yet.** The site
   collects real personal data (names, addresses, photos of properties),
   which has real UK GDPR obligations — a privacy policy page and an
@@ -181,7 +203,8 @@ src/
 │   └── api.check-quote-decisions.ts # Polling endpoint for Airtable decisions
 ├── integrations/
 │   ├── supabase/                    # DB client (anon + admin), generated types
-│   ├── resend/                      # Thank-you, admin-notification, decision emails
+│   ├── brevo/                       # Thank-you, admin-notification, decision emails (active)
+│   ├── postmark/                    # Same emails, unused fallback provider
 │   ├── airtable/                    # Sync a quote to Airtable, check for decisions
 │   └── pricing/                     # Server function that runs the price calculation
 ├── lib/
@@ -190,4 +213,5 @@ src/
 
 supabase/migrations/                 # Every schema/RLS change, in order
 PRICING.md                           # The pricing algorithm, explained in detail
+server.entry.mjs                     # Node entry point for deployment — see Deployment
 ```
